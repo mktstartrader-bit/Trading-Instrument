@@ -12,3 +12,4 @@ Thumbs.db
 # Dependencies / build (none currently, but safe)
 node_modules/
 .vercel/
+.vercel

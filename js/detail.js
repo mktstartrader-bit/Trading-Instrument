@@ -41,6 +41,57 @@
     etf: "is an exchange-traded fund giving diversified exposure to a basket of assets or a theme in a single instrument. ETF CFDs let you trade long or short with competitive conditions."
   };
 
+  var DRIVERS = {
+    forex: ["Central-bank interest-rate decisions (Fed, ECB, BoE)", "Inflation, employment and GDP releases", "Trade balances and cross-border capital flows", "Risk sentiment and geopolitical events"],
+    metals: ["US dollar strength and real bond yields", "Inflation and safe-haven demand", "Central-bank reserve buying", "Geopolitical and macro-economic risk"],
+    indices: ["Corporate earnings and forward guidance", "Monetary policy and interest rates", "Economic growth and jobs data", "Sector rotation and market sentiment"],
+    commodities: ["Global supply-and-demand balances", "Weather, seasonality and harvests", "OPEC+ and production decisions", "US dollar strength and inventory data"],
+    shares: ["Company earnings and forward guidance", "Sector and industry trends", "Interest rates and the macro backdrop", "News flow and market sentiment"],
+    crypto: ["Network adoption and on-chain flows", "Regulation and spot-ETF developments", "Global risk appetite and liquidity", "Macro conditions and the US dollar"],
+    etf: ["Performance of the underlying basket", "Fund inflows, outflows and rebalancing", "Interest rates and the macro backdrop", "Sector and thematic trends"]
+  };
+
+  function whyPoints(it) {
+    return [
+      "Spreads from " + it.spread + " with deep institutional liquidity",
+      "Leverage up to " + it.leverage + " — margin from " + marginPct(it.leverage),
+      "Go long or short to trade both rising and falling markets",
+      "Trade " + it.hours + " with sub-30ms execution on MT4, MT5 & STAR Web Trading"
+    ];
+  }
+  function quoteOf(it) {
+    if (it.sym.indexOf("/") > -1) return it.sym.split("/")[1];
+    return { "$": "USD", "€": "EUR", "¥": "JPY", "£": "GBP", "A$": "AUD", "C$": "CAD" }[it.cur] || "USD";
+  }
+  function maxLot(cat) { return { forex: "100", metals: "100", indices: "50", commodities: "50", shares: "500", crypto: "20", etf: "100" }[cat] || "100"; }
+  function commission(cat) { return { forex: "From $3 / lot (Prime)", metals: "$3 / lot", indices: "Zero", commodities: "Zero", shares: "0.02% / side", crypto: "0.10% / side", etf: "0.05% / side" }[cat] || "Zero"; }
+  function swaps(it) {
+    var r = seeded(it.id + "swap");
+    var sl = -(0.3 + r() * 3.6), ss = -(0.1 + r() * 1.9);
+    return sl.toFixed(2) + " / " + ss.toFixed(2);
+  }
+  function variantDesc(raw) {
+    if (/\.m\+$/.test(raw)) return "Prime ECN · metals feed";
+    if (/\.c$/.test(raw)) return "Cent account";
+    if (/\+$/.test(raw)) return "Prime ECN · raw spreads";
+    if (/#$/.test(raw)) return "ECN · raw spreads";
+    if (/\.bc$/.test(raw)) return "Blockchain / crypto feed";
+    if (/\.z$/.test(raw)) return "Zero-spread account";
+    if (/\.r$/.test(raw)) return "Raw-spread account";
+    if (/\.i$/.test(raw)) return "Index-priced feed";
+    if (/\.m$/.test(raw)) return "Metals-priced feed";
+    if (/\.crp$/.test(raw)) return "Corporate feed";
+    if (/\.24H$/i.test(raw)) return "24-hour trading";
+    if (/ft$/i.test(raw)) return "Futures contract";
+    if (/\.XTKS$/.test(raw)) return "Tokyo Stock Exchange";
+    return "Standard account";
+  }
+  var ICO_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>';
+  var ICO_DOT = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>';
+  function ulist(items, icon) {
+    return '<ul class="about-list">' + items.map(function (t) { return '<li>' + icon + '<span>' + t + '</span></li>'; }).join("") + '</ul>';
+  }
+
   function buildChart(it, n) {
     var rnd = seeded(it.sym + n), pts = [], v = 50;
     for (var i = 0; i < n; i++) { v += (rnd() - 0.5) * 14 + it.trend * 0.9; v = Math.max(10, Math.min(90, v)); pts.push(v); }
@@ -157,18 +208,27 @@
       '<div class="d-grid">' +
         '<div class="panel pad"><h3>Contract Specifications</h3><div class="muted">Key trading conditions for ' + it.sym + '</div>' +
           '<div class="specs">' +
-            spec("Symbol", it.sym) + spec("Asset Class", catLabel(it.cat)) + spec("Min. Spread", String(it.spread)) +
-            spec("Max. Leverage", it.leverage) + spec("Trading Hours", it.hours) + spec("Contract Size", contractSize(it.cat)) +
+            spec("Symbol", it.sym) + spec("Asset Class", catLabel(it.cat)) + spec("Quote Currency", quoteOf(it)) +
+            spec("Min. Spread", String(it.spread)) + spec("Max. Leverage", it.leverage) + spec("Margin", "from " + marginPct(it.leverage)) +
+            spec("Contract Size", contractSize(it.cat)) + spec("Min. Lot", "0.01") + spec("Max. Lot", maxLot(it.cat)) +
+            spec("Trading Hours", it.hours) + spec("Commission", commission(it.cat)) + spec("Swap L / S", swaps(it)) +
           '</div>' +
         '</div>' +
         '<div class="panel pad"><h3>About ' + it.sym + '</h3><div class="muted">' + it.name + '</div>' +
-          '<p><b>' + it.sym + '</b> ' + (about[it.cat] || "") + '</p></div>' +
+          '<p><b>' + it.sym + '</b> ' + (about[it.cat] || "") + '</p>' +
+          '<div class="about-sub">Why trade ' + it.sym + ' with STARTRADER</div>' +
+          ulist(whyPoints(it), ICO_CHECK) +
+          '<div class="about-sub">Key market drivers</div>' +
+          ulist(DRIVERS[it.cat] || [], ICO_DOT) +
+        '</div>' +
       '</div>' +
 
       (it.variants && it.variants.length ?
         '<div class="panel pad" style="margin-top:16px"><h3>Available Symbols</h3>' +
-          '<div class="muted">' + it.variants.length + ' tradable variant' + (it.variants.length > 1 ? "s" : "") + ' for ' + it.sym + ' (account type / feed)</div>' +
-          '<div class="variants">' + it.variants.map(function (v) { return '<span class="vchip">' + v + '</span>'; }).join("") + '</div></div>' : "") +
+          '<div class="muted">The same instrument is offered on ' + it.variants.length + ' account type' + (it.variants.length > 1 ? "s" : "") + ' / data feed' + (it.variants.length > 1 ? "s" : "") + '. Symbol suffixes vary by platform and account.</div>' +
+          '<div class="vgrid">' + it.variants.map(function (v) {
+            return '<div class="vitem"><span class="vsym">' + v + '</span><span class="vdesc">' + variantDesc(v) + '</span></div>';
+          }).join("") + '</div></div>' : "") +
 
       '<div class="related"><h3>Related in ' + catLabel(it.cat) + '</h3>' +
         relatedTable(window.INSTRUMENTS.filter(function (x) { return x.cat === it.cat && x.id !== it.id; }).slice(0, 4)) +
