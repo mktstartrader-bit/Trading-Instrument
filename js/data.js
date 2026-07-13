@@ -1,16 +1,27 @@
 /* ============================================================
    STARTRADER — Instrument dataset builder
-   Consumes the real symbol universe from symbol_all.js (`data_all`)
+   Consumes the curated "Most Traded" symbol list below
    -> deduplicates feed/account variants to one card per instrument
    -> assigns friendly names + asset-appropriate demo pricing
    Prices/changes are SIMULATED placeholders (seeded, stable per
    symbol) — swap the pricing block for your live market feed.
+
+   The lists are the top-10 most-traded symbols per category. Edit
+   MOST_TRADED to change which instruments appear (order = ranking).
    ============================================================ */
 (function () {
   "use strict";
 
-  var RAW = (typeof data_all !== "undefined") ? data_all
-          : (typeof window !== "undefined" && window.data_all) ? window.data_all : {};
+  /* -------- curated top-10 most-traded symbols per category -------- */
+  var MOST_TRADED = {
+    "Forex":       ["EURUSD.c", "EURUSD+", "EURUSD", "GBPJPY.c", "GBPJPY+", "GBPJPY", "USDCAD.c", "USDCAD+", "USDCAD", "GBPUSD.c"],
+    "Commodities": ["UKOUSD+", "UKOUSD.c", "UKOUSD", "USOUSD+", "USOUSD.c", "USOUSD", "CL-OIL+", "CL-OIL.c", "CL-OIL", "UKOUSDft+"],
+    "Indices":     ["NAS100+", "NAS100.z", "NAS100.r", "DJ30+", "DJ30.z", "DJ30.r", "NAS100ft+", "NAS100ft.z", "NAS100ft.r", "GER40+"],
+    "Metals":      ["XAUUSD.c", "XAUUSD.m", "XAUUSD.m+", "XAUUSD.crp", "XAUUSD", "XAUUSD+", "XAGUSD.c", "XAGUSD+", "XAGUSD", "XAUAUD.c"],
+    "Share CFDs":  ["MARA.24H", "MSTR.24H", "NVIDIA.", "NVIDIA", "SPCE.", "SPCE", "TSLA.", "TSLA", "HDB", "NIO."],
+    "ETF":         ["BITO", "EWY", "ARKB", "TQQQ", "UNG", "BITB", "BTCO", "DRAM", "DXYZ", "EWJ"]
+  };
+  var RAW = MOST_TRADED;
 
   /* -------- category mapping (source label -> app category) -------- */
   var CAT_MAP = {
@@ -19,10 +30,9 @@
     "Commodities": { id: "commodities", label: "Commodities", ico: "🛢️" },
     "Indices":     { id: "indices",     label: "Indices",     ico: "📊" },
     "Share CFDs":  { id: "shares",      label: "Shares",      ico: "🏛️" },
-    "Crypto":      { id: "crypto",      label: "Crypto",      ico: "₿" },
     "ETF":         { id: "etf",         label: "ETFs",        ico: "📈" }
   };
-  var CAT_ORDER = ["forex", "metals", "commodities", "indices", "shares", "crypto", "etf"];
+  var CAT_ORDER = ["forex", "commodities", "indices", "metals", "shares", "etf"];
 
   /* -------- seeded PRNG (stable per symbol) -------- */
   function seeded(str) {
@@ -77,7 +87,7 @@
   var ETF = { EWY: "iShares South Korea", TQQQ: "ProShares UltraPro QQQ", ARKB: "ARK 21Shares Bitcoin", BITB: "Bitwise Bitcoin",
     BITO: "ProShares Bitcoin Strategy", BTCO: "Invesco Galaxy Bitcoin", EWJ: "iShares Japan", EWZ: "iShares Brazil",
     GBTC: "Grayscale Bitcoin Trust", IBIT: "iShares Bitcoin Trust", INDA: "iShares India", MCHI: "iShares China",
-    TLT: "iShares 20+ Yr Treasury", UNG: "US Natural Gas Fund" };
+    TLT: "iShares 20+ Yr Treasury", UNG: "US Natural Gas Fund", DRAM: "Themes DRAM Semiconductor ETF", DXYZ: "Destiny Tech100" };
   var SHARE = { AAPL: "Apple", TSLA: "Tesla", NVIDIA: "NVIDIA", META: "Meta Platforms", MSFT: "Microsoft",
     AMAZON: "Amazon", GOOG: "Alphabet", NFLX: "Netflix", INTEL: "Intel", ORCL: "Oracle", AMD: "AMD", CRM: "Salesforce",
     ADBE: "Adobe", DISNEY: "Walt Disney", BOEING: "Boeing", KO: "Coca-Cola", PEP: "PepsiCo", MCD: "McDonald's",
@@ -90,7 +100,8 @@
     NIO: "NIO", XPEV: "XPeng", LI: "Li Auto", JD: "JD.com", PDD: "PDD Holdings", TOYOTA: "Toyota", HSBCn: "HSBC",
     BUD: "Anheuser-Busch", UL: "Unilever", NVS: "Novartis", NTES: "NetEase", TCOM: "Trip.com", "AT&T": "AT&T",
     "CMCSA": "Comcast", VZ: "Verizon", MMM: "3M", HON: "Honeywell", CAT: "Caterpillar", GE: "GE Aerospace",
-    LULU: "Lululemon", MSTR: "MicroStrategy", OPENAIUSD: "OpenAI (Pre-IPO)", ANTHUSD: "Anthropic (Pre-IPO)", SPCX: "SpaceX (Pre-IPO)" };
+    LULU: "Lululemon", MSTR: "MicroStrategy", MARA: "MARA Holdings", SPCE: "Virgin Galactic", HDB: "HDFC Bank",
+    OPENAIUSD: "OpenAI (Pre-IPO)", ANTHUSD: "Anthropic (Pre-IPO)", SPCX: "SpaceX (Pre-IPO)" };
 
   /* -------- currency symbol + magnitude helpers -------- */
   var CURSYM = { USD: "$", EUR: "€", JPY: "¥", GBP: "£", AUD: "A$", CAD: "C$", CHF: "" };
@@ -203,7 +214,8 @@
   function anchoredShare(base, rng) {
     var a = { AAPL: 214, TSLA: 183, NVIDIA: 126, META: 504, MSFT: 449, AMAZON: 193, GOOG: 178, NFLX: 640, INTEL: 34,
       AMD: 158, TSM: 174, AVGO: 168, COIN: 232, MSTR: 1580, COST: 880, MA: 462, VISA: 275, JPM: 205, UNH: 495,
-      WMT: 68, HD: 345, MCD: 255, KO: 63, BOEING: 178, OPENAIUSD: 210, ANTHUSD: 185 }[base];
+      WMT: 68, HD: 345, MCD: 255, KO: 63, BOEING: 178, MARA: 18, SPCE: 6, HDB: 66, NIO: 5,
+      OPENAIUSD: 210, ANTHUSD: 185 }[base];
     return (a || rnum(rng, 40, 400)) * (0.97 + rng() * 0.06);
   }
 
@@ -226,7 +238,7 @@
   });
 
   /* -------- categories list for the UI -------- */
-  var categories = [{ id: "all", label: "All Markets", ico: "◎" }];
+  var categories = [{ id: "all", label: "Most Traded", ico: "◎" }];
   CAT_ORDER.forEach(function (id) {
     var src = Object.keys(CAT_MAP).find(function (k) { return CAT_MAP[k].id === id; });
     if (src && catCounts[id]) categories.push({ id: id, label: CAT_MAP[src].label, ico: CAT_MAP[src].ico });

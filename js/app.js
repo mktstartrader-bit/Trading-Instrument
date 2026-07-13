@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-  var state = { cat: "all", q: "", sort: "default", limit: 10 };
+  var state = { cat: "all", q: "", limit: 10 };
   var PAGE = 10;
 
   /* ---------- helpers ---------- */
@@ -84,9 +84,6 @@
       var okQ = !q || it.sym.toLowerCase().indexOf(q) > -1 || it.name.toLowerCase().indexOf(q) > -1;
       return okCat && okQ;
     });
-    if (state.sort === "gainers") list = list.slice().sort(function (a, b) { return b.chg - a.chg; });
-    else if (state.sort === "losers") list = list.slice().sort(function (a, b) { return a.chg - b.chg; });
-    else if (state.sort === "az") list = list.slice().sort(function (a, b) { return a.sym.localeCompare(b.sym); });
 
     document.getElementById("resultCount").textContent = list.length;
 
@@ -124,7 +121,7 @@
   /* ---------- ticker ---------- */
   function renderTicker() {
     var t = document.getElementById("ticker");
-    var items = window.INSTRUMENTS.filter(function (i) { return ["forex", "metals", "indices", "crypto"].indexOf(i.cat) > -1; }).slice(0, 18);
+    var items = window.INSTRUMENTS.filter(function (i) { return ["forex", "metals", "commodities", "indices", "shares"].indexOf(i.cat) > -1; }).slice(0, 18);
     var one = items.map(function (it) {
       var up = it.chg >= 0;
       return '<span class="tick"><span class="s">' + it.sym + '</span><span class="p">' + (it.cur || "") + fmt(it.price, it.dp) + '</span>' +
@@ -165,13 +162,6 @@
 
     var search = document.getElementById("search");
     search.addEventListener("input", function () { state.q = search.value; state.limit = PAGE; renderTable(); });
-
-    document.querySelectorAll(".sort button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        document.querySelectorAll(".sort button").forEach(function (x) { x.classList.remove("active"); });
-        b.classList.add("active"); state.sort = b.dataset.sort; state.limit = PAGE; renderTable();
-      });
-    });
 
     setInterval(liveTick, 2400);
   }
