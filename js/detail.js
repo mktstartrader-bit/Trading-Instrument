@@ -48,9 +48,59 @@
     return "Standard account";
   }
 
+  /* ---------- About section content (row 24) ---------- */
+  var about = {
+    forex: "is one of the most actively traded currency pairs in the global foreign-exchange market. Prices are driven by interest-rate differentials, macroeconomic data and central-bank policy. Trade it around the clock, five days a week, with deep liquidity and tight spreads.",
+    metals: "is a benchmark precious-metal contract widely used as a store of value and a hedge against inflation and market volatility. Its price reacts to real yields, the US dollar and safe-haven demand.",
+    indices: "tracks the performance of a basket of leading listed companies, giving you diversified exposure to an entire economy or sector in a single trade. Index CFDs let you go long or short with competitive margins.",
+    energies: "is a globally traded energy benchmark whose price responds to supply-and-demand dynamics, OPEC+ policy, inventories and geopolitics.",
+    commodities: "is a globally traded commodity whose price is shaped by supply-and-demand fundamentals, weather, seasonality and global growth. It offers portfolio diversification and trending opportunities.",
+    shares: "lets you trade the price movements of a leading listed company without owning the underlying stock. Share CFDs offer flexible leverage and the ability to go long or short around earnings and news.",
+    crypto: "is a leading digital asset traded 24/7 across global venues. Crypto CFDs let you speculate on price movements — up or down — with leverage and no need for a wallet or exchange account.",
+    etf: "is an exchange-traded fund giving diversified exposure to a basket of assets or a theme in a single instrument. ETF CFDs let you trade long or short with competitive conditions."
+  };
+
+  var DRIVERS = {
+    forex: ["Central-bank interest-rate decisions (Fed, ECB, BoE)", "Inflation, employment and GDP releases", "Trade balances and cross-border capital flows", "Risk sentiment and geopolitical events"],
+    metals: ["US dollar strength and real bond yields", "Inflation and safe-haven demand", "Central-bank reserve buying", "Geopolitical and macro-economic risk"],
+    indices: ["Corporate earnings and forward guidance", "Monetary policy and interest rates", "Economic growth and jobs data", "Sector rotation and market sentiment"],
+    commodities: ["Global supply-and-demand balances", "Weather, seasonality and harvests", "OPEC+ and production decisions", "US dollar strength and inventory data"],
+    shares: ["Company earnings and forward guidance", "Sector and industry trends", "Interest rates and the macro backdrop", "News flow and market sentiment"],
+    crypto: ["Network adoption and on-chain flows", "Regulation and spot-ETF developments", "Global risk appetite and liquidity", "Macro conditions and the US dollar"],
+    etf: ["Performance of the underlying basket", "Fund inflows, outflows and rebalancing", "Interest rates and the macro backdrop", "Sector and thematic trends"]
+  };
+
+  function whyPoints(it) {
+    return [
+      "Spreads from " + it.spread + " with deep institutional liquidity",
+      "Leverage up to " + it.leverage + " — margin from " + marginPct(it.leverage),
+      "Go long or short to trade both rising and falling markets",
+      "Trade " + it.hours + " with sub-30ms execution on MT4, MT5 & STAR Web Trading"
+    ];
+  }
+
+  var ICO_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>';
+  var ICO_DOT = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>';
+  function ulist(items, icon) {
+    return '<ul class="about-list">' + items.map(function (t) { return '<li>' + icon + '<span>' + t + '</span></li>'; }).join("") + '</ul>';
+  }
+
   /* ============================================================ CHART */
 
-  var RANGE_N = { "1D": 24, "1W": 30, "1M": 24, "1Y": 40 };
+  /* timeframes (row 11): candle count · per-candle duration · axis label style */
+  var MIN = 60000, HR = 3600000, DAY = 86400000;
+  var TF = {
+    "1m":  { n: 30, step: MIN,       fmt: "time" },
+    "5m":  { n: 32, step: 5 * MIN,   fmt: "time" },
+    "15m": { n: 32, step: 15 * MIN,  fmt: "time" },
+    "30m": { n: 32, step: 30 * MIN,  fmt: "time" },
+    "1H":  { n: 30, step: HR,        fmt: "time" },
+    "4H":  { n: 30, step: 4 * HR,    fmt: "date" },
+    "1D":  { n: 30, step: DAY,       fmt: "date" },
+    "1W":  { n: 30, step: 7 * DAY,   fmt: "date" },
+    "1M":  { n: 24, step: 30 * DAY,  fmt: "month" }
+  };
+  var TF_ORDER = ["1m", "5m", "15m", "30m", "1H", "4H", "1D", "1W", "1M"];
   var UP = "#0ca678", DOWN = "#e5484d";
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -72,23 +122,23 @@
     return arr;
   }
 
-  /* per-candle date/time labels ending at "now" */
+  function pad2(v) { return (v < 10 ? "0" : "") + v; }
+
+  /* per-candle axis labels ending at "now", scaled to the timeframe */
   function buildDates(range, n) {
-    var now = new Date(), MS = 86400000, out = [];
-    var span = { "1D": 1, "1W": 7, "1M": 31, "1Y": 365 }[range] || 31;
+    var tf = TF[range] || TF["1D"], now = Date.now(), out = [];
     for (var i = 0; i < n; i++) {
-      var frac = n > 1 ? i / (n - 1) : 1;
-      if (range === "1D") { var hh = Math.round(24 * frac); out.push((hh < 10 ? "0" : "") + hh + ":00"); continue; }
-      var d = new Date(now.getTime() - span * MS * (1 - frac));
-      out.push(range === "1Y" ? MON[d.getMonth()] + " " + String(d.getFullYear()).slice(2)
-                              : MON[d.getMonth()] + " " + d.getDate());
+      var d = new Date(now - (n - 1 - i) * tf.step);
+      if (tf.fmt === "time") out.push(pad2(d.getHours()) + ":" + pad2(d.getMinutes()));
+      else if (tf.fmt === "month") out.push(MON[d.getMonth()] + " '" + String(d.getFullYear()).slice(2));
+      else out.push(MON[d.getMonth()] + " " + d.getDate());
     }
     return out;
   }
 
   function renderChart(it, range, type) {
     var wrap = document.getElementById("chart");
-    var n = RANGE_N[range] || 24;
+    var n = (TF[range] || TF["1D"]).n;
     var candles = buildCandles(it, n, range);
     var dates = buildDates(range, n);
     var W = 800, H = 300, padTop = 14, padBot = 14, padRight = 58;
@@ -222,7 +272,7 @@
           '</div>' +
           '<div class="chart-toolbar">' +
             '<div class="range-tabs" id="rangeTabs">' +
-              '<button data-r="1D">1D</button><button data-r="1W">1W</button><button data-r="1M" class="active">1M</button><button data-r="1Y">1Y</button>' +
+              TF_ORDER.map(function (r) { return '<button data-r="' + r + '"' + (r === "1D" ? ' class="active"' : '') + '>' + r + '</button>'; }).join("") +
             '</div>' +
             '<div class="chart-type">' +
               '<svg class="ct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v4M7 16v4M7 8h0M17 4v6M17 18v2"/><rect x="4" y="8" width="6" height="8" rx="1.5"/><rect x="14" y="10" width="6" height="8" rx="1.5"/></svg>' +
@@ -239,7 +289,6 @@
               '<div class="ba sell"><div class="lab">Sell</div><div class="val tnum">' + fmt(bidP, it.dp) + '</div></div>' +
               '<div class="ba buy"><div class="lab">Buy</div><div class="val tnum">' + fmt(askP, it.dp) + '</div></div>' +
             '</div>' +
-            '<div class="spread-line">Spread <b>' + it.spread + '</b> · Leverage up to <b>' + it.leverage + '</b></div>' +
             '<div class="d-cta"><a href="#" class="btn btn-sell">Sell</a><a href="#" class="btn btn-buy">Buy</a></div>' +
           '</div>' +
           '<div class="d-banner">' +
@@ -256,6 +305,14 @@
         '</div>' +
       '</div>' +
 
+      '<div class="panel pad" style="margin-top:16px"><h3>About ' + it.sym + '</h3><div class="muted">' + it.name + '</div>' +
+        '<p><b>' + it.sym + '</b> ' + (about[it.cat] || "") + '</p>' +
+        '<div class="about-cols">' +
+          '<div><div class="about-sub">Why trade ' + it.sym + ' with STARTRADER</div>' + ulist(whyPoints(it), ICO_CHECK) + '</div>' +
+          '<div><div class="about-sub">Key market drivers</div>' + ulist(DRIVERS[it.cat] || [], ICO_DOT) + '</div>' +
+        '</div>' +
+      '</div>' +
+
       (it.variants && it.variants.length ?
         '<div class="panel pad" style="margin-top:16px"><h3>Available Symbols</h3>' +
           '<div class="muted">The same instrument is offered on ' + it.variants.length + ' account type' + (it.variants.length > 1 ? "s" : "") + ' / data feed' + (it.variants.length > 1 ? "s" : "") + '. Symbol suffixes vary by platform and account.</div>' +
@@ -268,7 +325,7 @@
         '<a href="index.html" class="btn btn-outline back-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back to all instruments</a>' +
       '</div>';
 
-    var chartState = { range: "1M", type: "candles" };
+    var chartState = { range: "1D", type: "candles" };
     renderChart(it, chartState.range, chartState.type);
 
     document.querySelectorAll("#rangeTabs button").forEach(function (b) {
