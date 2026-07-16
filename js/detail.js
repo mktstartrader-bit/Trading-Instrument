@@ -1,6 +1,7 @@
 /* ============================================================
    STARTRADER — Instrument detail page (light theme)
    Reads ?symbol=<id> and renders full instrument info + chart
+   Chart supports a Candles / Line switch with a dated x-axis.
    ============================================================ */
 (function () {
   "use strict";
@@ -30,46 +31,6 @@
   }
   function bcell(k, v) { return '<div class="bi"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
 
-  var about = {
-    forex: "is one of the most actively traded currency pairs in the global foreign-exchange market. Prices are driven by interest-rate differentials, macroeconomic data and central-bank policy. Trade it around the clock, five days a week, with deep liquidity and tight spreads.",
-    metals: "is a benchmark precious-metal contract widely used as a store of value and a hedge against inflation and market volatility. Its price reacts to real yields, the US dollar and safe-haven demand.",
-    indices: "tracks the performance of a basket of leading listed companies, giving you diversified exposure to an entire economy or sector in a single trade. Index CFDs let you go long or short with competitive margins.",
-    energies: "is a globally traded energy benchmark whose price responds to supply-and-demand dynamics, OPEC+ policy, inventories and geopolitics.",
-    commodities: "is a globally traded commodity whose price is shaped by supply-and-demand fundamentals, weather, seasonality and global growth. It offers portfolio diversification and trending opportunities.",
-    shares: "lets you trade the price movements of a leading listed company without owning the underlying stock. Share CFDs offer flexible leverage and the ability to go long or short around earnings and news.",
-    crypto: "is a leading digital asset traded 24/7 across global venues. Crypto CFDs let you speculate on price movements — up or down — with leverage and no need for a wallet or exchange account.",
-    etf: "is an exchange-traded fund giving diversified exposure to a basket of assets or a theme in a single instrument. ETF CFDs let you trade long or short with competitive conditions."
-  };
-
-  var DRIVERS = {
-    forex: ["Central-bank interest-rate decisions (Fed, ECB, BoE)", "Inflation, employment and GDP releases", "Trade balances and cross-border capital flows", "Risk sentiment and geopolitical events"],
-    metals: ["US dollar strength and real bond yields", "Inflation and safe-haven demand", "Central-bank reserve buying", "Geopolitical and macro-economic risk"],
-    indices: ["Corporate earnings and forward guidance", "Monetary policy and interest rates", "Economic growth and jobs data", "Sector rotation and market sentiment"],
-    commodities: ["Global supply-and-demand balances", "Weather, seasonality and harvests", "OPEC+ and production decisions", "US dollar strength and inventory data"],
-    shares: ["Company earnings and forward guidance", "Sector and industry trends", "Interest rates and the macro backdrop", "News flow and market sentiment"],
-    crypto: ["Network adoption and on-chain flows", "Regulation and spot-ETF developments", "Global risk appetite and liquidity", "Macro conditions and the US dollar"],
-    etf: ["Performance of the underlying basket", "Fund inflows, outflows and rebalancing", "Interest rates and the macro backdrop", "Sector and thematic trends"]
-  };
-
-  function whyPoints(it) {
-    return [
-      "Spreads from " + it.spread + " with deep institutional liquidity",
-      "Leverage up to " + it.leverage + " — margin from " + marginPct(it.leverage),
-      "Go long or short to trade both rising and falling markets",
-      "Trade " + it.hours + " with sub-30ms execution on MT4, MT5 & STAR Web Trading"
-    ];
-  }
-  function quoteOf(it) {
-    if (it.sym.indexOf("/") > -1) return it.sym.split("/")[1];
-    return { "$": "USD", "€": "EUR", "¥": "JPY", "£": "GBP", "A$": "AUD", "C$": "CAD" }[it.cur] || "USD";
-  }
-  function maxLot(cat) { return { forex: "100", metals: "100", indices: "50", commodities: "50", shares: "500", crypto: "20", etf: "100" }[cat] || "100"; }
-  function commission(cat) { return { forex: "From $3 / lot (Prime)", metals: "$3 / lot", indices: "Zero", commodities: "Zero", shares: "0.02% / side", crypto: "0.10% / side", etf: "0.05% / side" }[cat] || "Zero"; }
-  function swaps(it) {
-    var r = seeded(it.id + "swap");
-    var sl = -(0.3 + r() * 3.6), ss = -(0.1 + r() * 1.9);
-    return sl.toFixed(2) + " / " + ss.toFixed(2);
-  }
   function variantDesc(raw) {
     if (/\.m\+$/.test(raw)) return "Prime ECN · metals feed";
     if (/\.c$/.test(raw)) return "Cent account";
@@ -86,55 +47,139 @@
     if (/\.XTKS$/.test(raw)) return "Tokyo Stock Exchange";
     return "Standard account";
   }
-  var ICO_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>';
-  var ICO_DOT = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>';
-  function ulist(items, icon) {
-    return '<ul class="about-list">' + items.map(function (t) { return '<li>' + icon + '<span>' + t + '</span></li>'; }).join("") + '</ul>';
+
+  /* ============================================================ CHART */
+
+  var RANGE_N = { "1D": 24, "1W": 30, "1M": 24, "1Y": 40 };
+  var UP = "#0ca678", DOWN = "#e5484d";
+  var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  /* seeded OHLC walk, scaled so the final close lands on the live price */
+  function buildCandles(it, n, range) {
+    var rnd = seeded(it.sym + "|" + range + "|" + n);
+    var price = it.price, v = price * (0.90 + rnd() * 0.06), arr = [];
+    for (var i = 0; i < n; i++) {
+      var open = v;
+      var vol = price * (0.006 + rnd() * 0.018);
+      var close = open + ((rnd() - 0.5) + it.trend * 0.16) * vol * 2;
+      var high = Math.max(open, close) + rnd() * vol;
+      var low = Math.min(open, close) - rnd() * vol;
+      arr.push({ o: open, h: high, l: low, c: close });
+      v = close;
+    }
+    var scale = price / arr[arr.length - 1].c;
+    arr.forEach(function (k) { k.o *= scale; k.h *= scale; k.l *= scale; k.c *= scale; });
+    return arr;
   }
 
-  function buildChart(it, n) {
-    var rnd = seeded(it.sym + n), pts = [], v = 50;
-    for (var i = 0; i < n; i++) { v += (rnd() - 0.5) * 14 + it.trend * 0.9; v = Math.max(10, Math.min(90, v)); pts.push(v); }
-    return pts;
+  /* per-candle date/time labels ending at "now" */
+  function buildDates(range, n) {
+    var now = new Date(), MS = 86400000, out = [];
+    var span = { "1D": 1, "1W": 7, "1M": 31, "1Y": 365 }[range] || 31;
+    for (var i = 0; i < n; i++) {
+      var frac = n > 1 ? i / (n - 1) : 1;
+      if (range === "1D") { var hh = Math.round(24 * frac); out.push((hh < 10 ? "0" : "") + hh + ":00"); continue; }
+      var d = new Date(now.getTime() - span * MS * (1 - frac));
+      out.push(range === "1Y" ? MON[d.getMonth()] + " " + String(d.getFullYear()).slice(2)
+                              : MON[d.getMonth()] + " " + d.getDate());
+    }
+    return out;
   }
 
-  function renderChart(it, range) {
+  function renderChart(it, range, type) {
     var wrap = document.getElementById("chart");
-    var counts = { "1D": 24, "1W": 40, "1M": 60, "1Y": 90 };
-    var n = counts[range] || 60, pts = buildChart(it, n);
-    var W = 800, H = 300, pad = 8;
-    var max = Math.max.apply(null, pts), min = Math.min.apply(null, pts), rng = (max - min) || 1, step = W / (pts.length - 1);
-    var coords = pts.map(function (p, i) { return { x: i * step, y: H - pad - ((p - min) / rng) * (H - pad * 2 - 20) }; });
-    var d = coords.map(function (c, i) { return (i ? "L" : "M") + c.x.toFixed(1) + " " + c.y.toFixed(1); }).join(" ");
-    var area = d + " L " + W + " " + H + " L 0 " + H + " Z";
-    var gridLines = "";
-    for (var g = 1; g < 4; g++) { var y = (H / 4) * g; gridLines += '<line class="grid-line" x1="0" y1="' + y + '" x2="' + W + '" y2="' + y + '"/>'; }
-    var up = it.chg >= 0, col = up ? "#0ca678" : "#e5484d";
+    var n = RANGE_N[range] || 24;
+    var candles = buildCandles(it, n, range);
+    var dates = buildDates(range, n);
+    var W = 800, H = 300, padTop = 14, padBot = 14, padRight = 58;
+    var plotH = H - padTop - padBot, plotW = W - padRight;
 
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
-      '<defs><linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="' + col + '" stop-opacity="0.20"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs>' +
-      gridLines +
-      '<path d="' + area + '" fill="url(#areaG)"/>' +
-      '<path class="area-line" d="' + d + '" style="stroke:' + col + '"/>' +
-      '<circle class="cursor-dot" cx="-20" cy="-20" style="fill:' + col + '"/>' +
-      '</svg><div class="chart-tip" id="tip"></div>';
+    var max, min;
+    if (type === "line") {
+      var cs = candles.map(function (c) { return c.c; });
+      max = Math.max.apply(null, cs); min = Math.min.apply(null, cs);
+    } else {
+      max = Math.max.apply(null, candles.map(function (c) { return c.h; }));
+      min = Math.min.apply(null, candles.map(function (c) { return c.l; }));
+    }
+    var pad = (max - min) * 0.08 || 1; max += pad; min -= pad;
+    var rng = (max - min) || 1, step = plotW / n;
+    function Y(v) { return padTop + (max - v) / rng * plotH; }
 
-    var line = wrap.querySelector(".area-line");
-    try { var len = line.getTotalLength(); line.style.strokeDasharray = len; line.style.strokeDashoffset = len; line.getBoundingClientRect(); line.style.transition = "stroke-dashoffset 1.1s cubic-bezier(0.16,1,0.3,1)"; line.style.strokeDashoffset = "0"; } catch (e) {}
+    var grid = "";
+    for (var g = 1; g < 4; g++) { var gy = padTop + (g / 4) * plotH; grid += '<line class="grid-line" x1="0" y1="' + gy.toFixed(1) + '" x2="' + plotW + '" y2="' + gy.toFixed(1) + '"/>'; }
 
-    var dot = wrap.querySelector(".cursor-dot"), tip = document.getElementById("tip");
+    var body = "", up = it.chg >= 0;
+    if (type === "line") {
+      var col = up ? UP : DOWN;
+      var d = candles.map(function (c, i) { var x = i * step + step / 2; return (i ? "L" : "M") + x.toFixed(1) + " " + Y(c.c).toFixed(1); }).join(" ");
+      var firstX = (step / 2).toFixed(1), lastX = ((n - 1) * step + step / 2).toFixed(1);
+      body =
+        '<defs><linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="' + col + '" stop-opacity="0.20"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs>' +
+        '<path d="' + d + ' L ' + lastX + ' ' + H + ' L ' + firstX + ' ' + H + ' Z" fill="url(#areaG)"/>' +
+        '<path class="area-line" d="' + d + '" style="stroke:' + col + '"/>' +
+        '<circle class="cursor-dot" cx="-20" cy="-20" style="fill:' + col + '"/>';
+    } else {
+      var bodyW = Math.min(step * 0.62, 13);
+      candles.forEach(function (c, i) {
+        var x = i * step + step / 2, col = c.c >= c.o ? UP : DOWN;
+        var yO = Y(c.o), yC = Y(c.c), top = Math.min(yO, yC), hgt = Math.max(1.2, Math.abs(yO - yC));
+        body += '<line class="wick" x1="' + x.toFixed(1) + '" y1="' + Y(c.h).toFixed(1) + '" x2="' + x.toFixed(1) + '" y2="' + Y(c.l).toFixed(1) + '" stroke="' + col + '" vector-effect="non-scaling-stroke"/>';
+        body += '<rect class="candle" x="' + (x - bodyW / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + bodyW.toFixed(1) + '" height="' + hgt.toFixed(1) + '" fill="' + col + '"/>';
+      });
+      body += '<line class="crosshair" x1="-20" y1="' + padTop + '" x2="-20" y2="' + (H - padBot) + '" vector-effect="non-scaling-stroke"/>';
+    }
+
+    var yax = '<div class="chart-yaxis">';
+    for (var k = 0; k < 5; k++) {
+      var val = max - (k / 4) * (max - min), top = (padTop + (k / 4) * plotH) / H * 100;
+      yax += '<span class="y-label" style="top:' + top.toFixed(2) + '%">' + (it.cur || "") + fmt(val, it.dp) + '</span>';
+    }
+    yax += '</div>';
+
+    wrap.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + grid + body + '</svg>' + yax + '<div class="chart-tip" id="tip"></div>';
+
+    /* x-axis dates (evenly sampled, laid out across the plot width) */
+    var xEl = document.getElementById("chartDates");
+    var ticks = 7, xs = "";
+    for (var t = 0; t < ticks; t++) { xs += '<span>' + dates[Math.round(t * (n - 1) / (ticks - 1))] + '</span>'; }
+    xEl.innerHTML = xs;
+
+    /* line-draw animation */
+    if (type === "line") {
+      var line = wrap.querySelector(".area-line");
+      try { var len = line.getTotalLength(); line.style.strokeDasharray = len; line.style.strokeDashoffset = len; line.getBoundingClientRect(); line.style.transition = "stroke-dashoffset 1.1s cubic-bezier(0.16,1,0.3,1)"; line.style.strokeDashoffset = "0"; } catch (e) {}
+    }
+
+    /* hover tooltip */
+    var dot = wrap.querySelector(".cursor-dot"), cross = wrap.querySelector(".crosshair"), tip = document.getElementById("tip");
     wrap.onpointermove = function (e) {
       var r = wrap.getBoundingClientRect();
-      var idx = Math.max(0, Math.min(coords.length - 1, Math.round(((e.clientX - r.left) / r.width) * (coords.length - 1))));
-      var c = coords[idx];
-      dot.setAttribute("cx", c.x); dot.setAttribute("cy", c.y);
-      tip.style.left = (c.x / W) * r.width + "px"; tip.style.top = (c.y / H) * r.height + "px"; tip.style.opacity = "1";
-      tip.innerHTML = (it.cur || "") + fmt(it.price * (0.97 + (pts[idx] / 100) * 0.06), it.dp);
+      var idx = Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width) * (n - 1))));
+      var c = candles[idx], cx = idx * step + step / 2;
+      if (type === "line") {
+        var cy = Y(c.c);
+        dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.style.opacity = "1";
+        tip.style.left = (cx / W) * r.width + "px"; tip.style.top = (cy / H) * r.height + "px";
+        tip.innerHTML = '<div class="tt-d">' + dates[idx] + '</div><div class="tt-p">' + (it.cur || "") + fmt(c.c, it.dp) + '</div>';
+      } else {
+        cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.style.opacity = "1";
+        tip.style.left = (cx / W) * r.width + "px"; tip.style.top = (Y(c.h) / H) * r.height + "px";
+        tip.innerHTML = '<div class="tt-d">' + dates[idx] + '</div><div class="tt-ohlc">' +
+          '<span>O<b>' + fmt(c.o, it.dp) + '</b></span><span>H<b>' + fmt(c.h, it.dp) + '</b></span>' +
+          '<span>L<b>' + fmt(c.l, it.dp) + '</b></span><span>C<b>' + fmt(c.c, it.dp) + '</b></span></div>';
+      }
+      tip.style.opacity = "1";
     };
-    wrap.onpointerleave = function () { tip.style.opacity = "0"; dot.setAttribute("cx", -20); dot.setAttribute("cy", -20); };
+    wrap.onpointerleave = function () {
+      tip.style.opacity = "0";
+      if (dot) dot.style.opacity = "0";
+      if (cross) cross.style.opacity = "0";
+    };
   }
+
+  /* ============================================================ RELATED */
 
   function relatedTable(list) {
     if (!list.length) return "";
@@ -152,10 +197,8 @@
   }
 
   function row(k, v) { return '<div class="row"><span>' + k + '</span><b>' + v + '</b></div>'; }
-  function spec(k, v) { return '<div class="spec"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
-  function contractSize(cat) {
-    return { forex: "100,000", metals: "100 oz", indices: "1 index", commodities: "1,000 units", shares: "1 share", crypto: "1 coin", etf: "1 unit" }[cat] || "1";
-  }
+
+  /* ============================================================ PAGE */
 
   function render(it) {
     document.title = it.sym + " — " + it.name + " | STARTRADER";
@@ -177,9 +220,17 @@
             '<div class="d-price">' + (it.cur ? '<span class="cur">' + it.cur + '</span>' : '') + fmt(it.price, it.dp) + '</div>' +
             '<div class="d-change ' + (up ? "up" : "down") + '">' + arrow(up) + (up ? "+" : "") + it.chg.toFixed(2) + '% today</div>' +
           '</div>' +
-          '<div class="range-tabs" id="rangeTabs">' +
-            '<button data-r="1D">1D</button><button data-r="1W">1W</button><button data-r="1M" class="active">1M</button><button data-r="1Y">1Y</button></div>' +
+          '<div class="chart-toolbar">' +
+            '<div class="range-tabs" id="rangeTabs">' +
+              '<button data-r="1D">1D</button><button data-r="1W">1W</button><button data-r="1M" class="active">1M</button><button data-r="1Y">1Y</button>' +
+            '</div>' +
+            '<div class="chart-type">' +
+              '<svg class="ct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v4M7 16v4M7 8h0M17 4v6M17 18v2"/><rect x="4" y="8" width="6" height="8" rx="1.5"/><rect x="14" y="10" width="6" height="8" rx="1.5"/></svg>' +
+              '<select id="chartType" aria-label="Chart type"><option value="candles">Candles</option><option value="line">Line</option></select>' +
+            '</div>' +
+          '</div>' +
           '<div class="chart" id="chart"></div>' +
+          '<div class="chart-dates" id="chartDates"></div>' +
         '</div>' +
 
         '<div class="d-side">' +
@@ -205,24 +256,6 @@
         '</div>' +
       '</div>' +
 
-      '<div class="d-grid">' +
-        '<div class="panel pad"><h3>Contract Specifications</h3><div class="muted">Key trading conditions for ' + it.sym + '</div>' +
-          '<div class="specs">' +
-            spec("Symbol", it.sym) + spec("Asset Class", catLabel(it.cat)) + spec("Quote Currency", quoteOf(it)) +
-            spec("Min. Spread", String(it.spread)) + spec("Max. Leverage", it.leverage) + spec("Margin", "from " + marginPct(it.leverage)) +
-            spec("Contract Size", contractSize(it.cat)) + spec("Min. Lot", "0.01") + spec("Max. Lot", maxLot(it.cat)) +
-            spec("Trading Hours", it.hours) + spec("Commission", commission(it.cat)) + spec("Swap L / S", swaps(it)) +
-          '</div>' +
-        '</div>' +
-        '<div class="panel pad"><h3>About ' + it.sym + '</h3><div class="muted">' + it.name + '</div>' +
-          '<p><b>' + it.sym + '</b> ' + (about[it.cat] || "") + '</p>' +
-          '<div class="about-sub">Why trade ' + it.sym + ' with STARTRADER</div>' +
-          ulist(whyPoints(it), ICO_CHECK) +
-          '<div class="about-sub">Key market drivers</div>' +
-          ulist(DRIVERS[it.cat] || [], ICO_DOT) +
-        '</div>' +
-      '</div>' +
-
       (it.variants && it.variants.length ?
         '<div class="panel pad" style="margin-top:16px"><h3>Available Symbols</h3>' +
           '<div class="muted">The same instrument is offered on ' + it.variants.length + ' account type' + (it.variants.length > 1 ? "s" : "") + ' / data feed' + (it.variants.length > 1 ? "s" : "") + '. Symbol suffixes vary by platform and account.</div>' +
@@ -235,13 +268,18 @@
         '<a href="index.html" class="btn btn-outline back-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back to all instruments</a>' +
       '</div>';
 
-    renderChart(it, "1M");
+    var chartState = { range: "1M", type: "candles" };
+    renderChart(it, chartState.range, chartState.type);
+
     document.querySelectorAll("#rangeTabs button").forEach(function (b) {
       b.addEventListener("click", function () {
         document.querySelectorAll("#rangeTabs button").forEach(function (x) { x.classList.remove("active"); });
-        b.classList.add("active"); renderChart(it, b.dataset.r);
+        b.classList.add("active"); chartState.range = b.dataset.r; renderChart(it, chartState.range, chartState.type);
       });
     });
+    var typeSel = document.getElementById("chartType");
+    if (typeSel) typeSel.addEventListener("change", function () { chartState.type = typeSel.value; renderChart(it, chartState.range, chartState.type); });
+
     document.querySelectorAll(".rel-table tr.row").forEach(function (tr) {
       tr.addEventListener("click", function (e) { if (e.target.closest("a")) return; location.href = tr.dataset.href; });
     });

@@ -36,10 +36,11 @@
   function halfSpread(it) { return it.spread * Math.pow(10, -Math.max(0, it.dp - 1)) / 2; }
 
   /* ---------- filters ---------- */
+  var TOP = window.MOST_TRADED_TOP || [];
   function renderFilters() {
     var el = document.getElementById("filters");
     el.innerHTML = window.CATEGORIES.map(function (c) {
-      var count = c.id === "all" ? window.INSTRUMENTS.length : window.INSTRUMENTS.filter(function (i) { return i.cat === c.id; }).length;
+      var count = c.id === "all" ? TOP.length : window.INSTRUMENTS.filter(function (i) { return i.cat === c.id; }).length;
       return '<button class="chip' + (c.id === state.cat ? " active" : "") + '" data-cat="' + c.id + '">' +
         '<span class="ico">' + c.ico + '</span>' + c.label + ' <span class="cnt">' + count + '</span></button>';
     }).join("");
@@ -78,14 +79,24 @@
   function renderTable() {
     var tbody = document.getElementById("tbody");
     var wrap = document.getElementById("loadMoreWrap");
-    var list = window.INSTRUMENTS.filter(function (it) {
-      var okCat = state.cat === "all" || it.cat === state.cat;
-      var q = state.q.trim().toLowerCase();
-      var okQ = !q || it.sym.toLowerCase().indexOf(q) > -1 || it.name.toLowerCase().indexOf(q) > -1;
-      return okCat && okQ;
+    var q = state.q.trim().toLowerCase();
+
+    // "Most Traded" (all) shows a curated top-10 when idle; a search widens to the
+    // whole universe so every instrument stays findable from any tab.
+    var base;
+    if (state.cat === "all") {
+      base = q ? window.INSTRUMENTS : TOP.map(function (id) {
+        return window.INSTRUMENTS.filter(function (x) { return x.id === id; })[0];
+      }).filter(Boolean);
+    } else {
+      base = window.INSTRUMENTS.filter(function (it) { return it.cat === state.cat; });
+    }
+    var list = base.filter(function (it) {
+      return !q || it.sym.toLowerCase().indexOf(q) > -1 || it.name.toLowerCase().indexOf(q) > -1;
     });
 
-    document.getElementById("resultCount").textContent = list.length;
+    // section subtitle reflects the full catalogue (55), independent of the active tab
+    document.getElementById("resultCount").textContent = window.INSTRUMENTS.length;
 
     if (!list.length) {
       tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="big">🔍</div>No instruments match “' + state.q + '”.</div></td></tr>';

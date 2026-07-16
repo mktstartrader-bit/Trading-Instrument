@@ -12,15 +12,21 @@
 (function () {
   "use strict";
 
-  /* -------- curated top-10 most-traded symbols per category -------- */
+  /* -------- most-traded symbols per category --------
+     Distinct instruments after variant dedup (see baseSymbol):
+       Forex 10 · Commodities 10 · Indices 10 · Metals 5 · Shares 10 · ETFs 10 = 55.
+     Repeated bases (e.g. EURUSD / EURUSD.c / EURUSD+) collapse to ONE card and
+     surface their account/feed variants on the detail page. -------- */
   var MOST_TRADED = {
-    "Forex":       ["EURUSD.c", "EURUSD+", "EURUSD", "GBPJPY.c", "GBPJPY+", "GBPJPY", "USDCAD.c", "USDCAD+", "USDCAD", "GBPUSD.c"],
-    "Commodities": ["UKOUSD+", "UKOUSD.c", "UKOUSD", "USOUSD+", "USOUSD.c", "USOUSD", "CL-OIL+", "CL-OIL.c", "CL-OIL", "UKOUSDft+"],
-    "Indices":     ["NAS100+", "NAS100.z", "NAS100.r", "DJ30+", "DJ30.z", "DJ30.r", "NAS100ft+", "NAS100ft.z", "NAS100ft.r", "GER40+"],
-    "Metals":      ["XAUUSD.c", "XAUUSD.m", "XAUUSD.m+", "XAUUSD.crp", "XAUUSD", "XAUUSD+", "XAGUSD.c", "XAGUSD+", "XAGUSD", "XAUAUD.c"],
-    "Share CFDs":  ["MARA.24H", "MSTR.24H", "NVIDIA.", "NVIDIA", "SPCE.", "SPCE", "TSLA.", "TSLA", "HDB", "NIO."],
-    "ETF":         ["BITO", "EWY", "ARKB", "TQQQ", "UNG", "BITB", "BTCO", "DRAM", "DXYZ", "EWJ"]
+    "Forex":       ["EURUSD", "EURUSD.c", "EURUSD+", "GBPUSD", "GBPUSD.c", "USDJPY", "USDJPY+", "USDCAD", "AUDUSD", "GBPJPY", "EURJPY", "USDCHF", "NZDUSD", "EURGBP"],
+    "Commodities": ["UKOUSD", "UKOUSD+", "USOUSD", "USOUSD+", "NG", "COPPER", "Coffee", "Cocoa", "Sugar", "Cotton", "Soybean", "Wheat"],
+    "Indices":     ["NAS100", "NAS100+", "DJ30", "DJ30+", "SP500", "GER40", "UK100", "JPN225", "FRA40", "HK50", "AUS200", "US2000"],
+    "Metals":      ["XAUUSD", "XAUUSD.c", "XAUUSD+", "XAGUSD", "XAGUSD+", "XPTUSD", "XPDUSD", "XAUEUR"],
+    "Share CFDs":  ["NVIDIA", "TSLA", "AAPL", "MSFT", "AMAZON", "META", "GOOG", "NFLX", "MSTR", "COIN"],
+    "ETF":         ["BITO", "IBIT", "ARKB", "TQQQ", "UNG", "TLT", "INDA", "MCHI", "EWJ", "EWZ"]
   };
+  /* curated cross-asset "Most Traded" list (ranking order) shown on the default tab */
+  var MOST_TRADED_TOP = ["eurusd", "xauusd", "nas100", "tsla", "gbpusd", "nvidia", "usousd", "sp500", "usdjpy", "dj30"];
   var RAW = MOST_TRADED;
 
   /* -------- category mapping (source label -> app category) -------- */
@@ -117,7 +123,7 @@
   var COMMOD_ANCHOR = { UKOUSD: 85.6, USOUSD: 81.2, "CL-OIL": 81.2, XPDUSD: 968, XPTUSD: 1012, XALUSD: 2450,
     COPPER: 4.52, NG: 2.78, GAS: 2.78, Coffee: 228, Cocoa: 7600, OJ: 410, Sugar: 19.8, GASOIL: 760, Cotton: 72,
     Soybean: 1180, Wheat: 578 };
-  var METAL_ANCHOR = { XAUUSD: 2338, XAGUSD: 29.8, XAUAUD: 3560, XAUEUR: 2150, XAGAUD: 45.4 };
+  var METAL_ANCHOR = { XAUUSD: 2338, XAGUSD: 29.8, XAUAUD: 3560, XAUEUR: 2150, XAGAUD: 45.4, XPTUSD: 1012, XPDUSD: 968 };
   var CRYPTO_ANCHOR = { BTC: 61284, ETH: 3392, SOL: 142, BCH: 395, XRP: 0.48, XLM: 0.11, BNB: 585, ADA: 0.45,
     DOG: 0.13, DOT: 6.2, LTC: 72, TRX: 0.12, LNK: 14.2, UNI: 9.8, ETC: 26, FIL: 4.6, ZEC: 24, BAT: 0.24,
     OKB: 42, SHB: 0.000023, ONDO: 1.1, XTZ: 0.9, ATM: 7.4, WLD: 2.3, CRO: 0.09, ALG: 0.16, AVA: 27,
@@ -244,6 +250,12 @@
     if (src && catCounts[id]) categories.push({ id: id, label: CAT_MAP[src].label, ico: CAT_MAP[src].ico });
   });
 
+  /* curated "Most Traded" -> keep only ids that resolved to a real instrument, in order */
+  var byId = {};
+  instruments.forEach(function (it) { byId[it.id] = it; });
+  var mostTraded = MOST_TRADED_TOP.filter(function (id) { return byId[id]; });
+
   window.INSTRUMENTS = instruments;
   window.CATEGORIES = categories;
+  window.MOST_TRADED_TOP = mostTraded;
 })();

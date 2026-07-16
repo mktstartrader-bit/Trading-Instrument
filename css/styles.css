@@ -347,17 +347,48 @@ tr:hover .trade { background: var(--blue); color: #fff; border-color: var(--blue
 .d-change.up { color: var(--up); background: var(--up-bg); } .d-change.down { color: var(--down); background: var(--down-bg); }
 .d-change svg { width: 13px; height: 13px; }
 
-.range-tabs { display: flex; gap: 3px; margin: 18px 0 6px; background: rgba(255, 255, 255, .45); border: 1px solid var(--glass-brd); border-radius: 11px; padding: 4px; width: fit-content; }
+/* chart toolbar: range tabs (left) + type switch (right) */
+.chart-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 6px; flex-wrap: wrap; }
+.range-tabs { display: flex; gap: 3px; background: rgba(255, 255, 255, .45); border: 1px solid var(--glass-brd); border-radius: 11px; padding: 4px; width: fit-content; }
 .range-tabs button { font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--muted); background: transparent; border: 0; border-radius: 8px; padding: 8px 15px; cursor: pointer; transition: color .18s, background .18s; }
 .range-tabs button:hover { color: var(--ink); }
 .range-tabs button.active { color: #fff; background: var(--navy); }
+
+/* Candles / Line switch */
+.chart-type { position: relative; display: inline-flex; align-items: center; }
+.chart-type .ct-ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--blue); pointer-events: none; }
+.chart-type select {
+  font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--navy); cursor: pointer;
+  background: rgba(255, 255, 255, .55); border: 1px solid var(--glass-brd); border-radius: 10px;
+  padding: 9px 32px 9px 33px; -webkit-appearance: none; appearance: none; outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6); transition: border-color .2s, box-shadow .2s;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a7291' stroke-width='2.4'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat; background-position: right 10px center; background-size: 13px;
+}
+.chart-type select:hover { border-color: var(--blue); }
+.chart-type select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0, 71, 187, .12); }
 
 .chart { position: relative; height: 240px; margin-top: 6px; }
 .chart svg { width: 100%; height: 100%; overflow: visible; }
 .chart .area-line { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .chart .grid-line { stroke: var(--line); stroke-width: 1; }
-.chart .cursor-dot { r: 5; }
-.chart-tip { position: absolute; pointer-events: none; transform: translate(-50%, -130%); background: var(--navy); color: #fff; border-radius: 9px; padding: 6px 11px; font-size: 12px; font-weight: 700; white-space: nowrap; opacity: 0; transition: opacity .15s; box-shadow: var(--shadow-md); }
+.chart .cursor-dot { r: 5; opacity: 0; transition: opacity .15s; }
+.chart .wick { stroke-width: 1.4; }
+.chart rect.candle { rx: 1; }
+.chart .crosshair { stroke: var(--faint); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; transition: opacity .15s; }
+
+/* y-axis price labels (right) + x-axis dates (below) */
+.chart-yaxis { position: absolute; inset: 0; pointer-events: none; }
+.chart-yaxis .y-label { position: absolute; right: 4px; transform: translateY(-50%); font-size: 10.5px; font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; background: rgba(255, 255, 255, .62); padding: 1px 5px; border-radius: 5px; }
+.chart-dates { display: flex; justify-content: space-between; margin-top: 9px; padding: 0 7.25% 0 2px; }
+.chart-dates span { font-size: 10.5px; font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+.chart-tip { position: absolute; pointer-events: none; transform: translate(-50%, -130%); background: var(--navy); color: #fff; border-radius: 9px; padding: 7px 11px; font-size: 12px; font-weight: 700; white-space: nowrap; opacity: 0; transition: opacity .15s; box-shadow: var(--shadow-md); z-index: 2; }
+.chart-tip .tt-d { font-size: 10.5px; font-weight: 600; color: rgba(255, 255, 255, .68); margin-bottom: 3px; }
+.chart-tip .tt-p { font-size: 13px; }
+.chart-tip .tt-ohlc { display: flex; gap: 9px; }
+.chart-tip .tt-ohlc span { color: rgba(255, 255, 255, .6); font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart-tip .tt-ohlc b { color: #fff; font-weight: 700; margin-left: 2px; }
 
 .d-side { display: flex; flex-direction: column; gap: 16px; }
 .quote-card { padding: 20px 22px; }
