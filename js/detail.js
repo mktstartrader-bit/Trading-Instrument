@@ -8,10 +8,13 @@
 
   /* ---------- language ----------
      In Polish every string below that the workbook covers is read from
-     I.inst(id) — the instrument's own sheet, verbatim. Labels the workbook
-     does not define (Leverage, Margin, Day Range, …) stay in English. */
+     I.inst(id) — the instrument's own sheet, verbatim. The spec labels the
+     workbook does not define (Leverage, Margin, Day Range, …) come from the
+     shared per-language specLabels block in content-pl.js. */
   var I = window.I18N;
   function link(url) { return I ? I.href(url) : url; }
+  var SPEC = (I && I.ui && I.ui.specLabels) || {};
+  function label(key, en) { return SPEC[key] || en; }
 
   function qs(name) { return new URLSearchParams(location.search).get(name); }
   function fmt(n, dp) { return Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp }); }
@@ -323,15 +326,15 @@
               '<a href="#" class="btn btn-buy">' + ((p && p.buy) || "Buy") + '</a></div>' +
           '</div>' +
           '<div class="d-banner">' +
-            bcell("Trading Symbol", (p && p.tradeSym) || it.sym) +
-            bcell("Leverage", ((p && p.levPrefix) || "Up to") + " " + it.leverage) +
-            bcell("Margin", ((p && p.marginPrefix) || "from") + " " + marginPct(it.leverage)) +
-            bcell("Trading Hours (GMT)", it.hours) +
+            bcell(label("tradeSym", "Trading Symbol"), (p && p.tradeSym) || it.sym) +
+            bcell(label("leverage", "Leverage"), ((p && p.levPrefix) || "Up to") + " " + it.leverage) +
+            bcell(label("margin", "Margin"), ((p && p.marginPrefix) || "from") + " " + marginPct(it.leverage)) +
+            bcell(label("hours", "Trading Hours (GMT)"), it.hours) +
           '</div>' +
           '<div class="mini-stats panel">' +
-            row("Day Range", fmt(dayLow, it.dp) + " – " + fmt(dayHigh, it.dp)) +
-            row("52-Week Range", fmt(yLow, it.dp) + " – " + fmt(yHigh, it.dp)) +
-            row("Change %", (up ? "+" : "") + it.chg.toFixed(2) + "%") +
+            row(label("dayRange", "Day Range"), fmt(dayLow, it.dp) + " – " + fmt(dayHigh, it.dp)) +
+            row(label("weekRange", "52-Week Range"), fmt(yLow, it.dp) + " – " + fmt(yHigh, it.dp)) +
+            row(label("changePct", "Change %"), (up ? "+" : "") + it.chg.toFixed(2) + "%") +
           '</div>' +
         '</div>' +
       '</div>' +

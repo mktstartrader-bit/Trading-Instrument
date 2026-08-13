@@ -35,7 +35,16 @@ window.PL_CONTENT =
         "Zmiana",
         "Trend 7-dniowy",
         "Handluj"
-      ]
+      ],
+      "specLabels": {
+        "tradeSym": "Symbol",
+        "leverage": "Dźwignia",
+        "margin": "Depozyt zabezpieczający",
+        "hours": "Godziny handlu (GMT)",
+        "dayRange": "Zakres dzienny",
+        "weekRange": "Zakres 52-tygodniowy",
+        "changePct": "Zmiana %"
+      }
     },
     "en": {
       "heroTitleLead": "Trade the world's financial markets",
@@ -66,7 +75,16 @@ window.PL_CONTENT =
         "Change",
         "7-Day Trend",
         "Trade"
-      ]
+      ],
+      "specLabels": {
+        "tradeSym": "Trading Symbol",
+        "leverage": "Leverage",
+        "margin": "Margin",
+        "hours": "Trading Hours (GMT)",
+        "dayRange": "Day Range",
+        "weekRange": "52-Week Range",
+        "changePct": "Change %"
+      }
     }
   },
   "meta": {

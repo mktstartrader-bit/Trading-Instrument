@@ -70,6 +70,30 @@ FIELDS = [
     "back",         # 32 ← Powrót do wszystkich instrumentów
 ]
 
+# Detail-page spec labels (banner tiles + mini-stats rows). The workbook has no
+# rows for these micro-labels, so the PL wording below comes from the 13 Aug 2026
+# review comment on the PL preview and applies to every instrument page.
+SPEC_LABELS = {
+    "en": {
+        "tradeSym":  "Trading Symbol",
+        "leverage":  "Leverage",
+        "margin":    "Margin",
+        "hours":     "Trading Hours (GMT)",
+        "dayRange":  "Day Range",
+        "weekRange": "52-Week Range",
+        "changePct": "Change %",
+    },
+    "pl": {
+        "tradeSym":  "Symbol",
+        "leverage":  "Dźwignia",
+        "margin":    "Depozyt zabezpieczający",
+        "hours":     "Godziny handlu (GMT)",
+        "dayRange":  "Zakres dzienny",
+        "weekRange": "Zakres 52-tygodniowy",
+        "changePct": "Zmiana %",
+    },
+}
+
 ANNOTATIONS = [
     re.compile(r"\s*\(tabela\)\s*$", re.I),
     re.compile(r"\s*\(table\)\s*$", re.I),
@@ -184,7 +208,7 @@ def main():
     pl, fb_home = read_final(home, 10)
     en = [clean(home.cell(row=r, column=1).value) for r in range(2, 12)]
 
-    def ui(src):
+    def ui(src, lang):
         title = hero_title(src[0])
         return {
             "heroTitleLead": title[0],
@@ -197,10 +221,11 @@ def main():
             # "Forex (10)" -> "Forex"; the explorer renders its own live count
             "chips": [re.sub(r"\s*\(\d+\)\s*$", "", p.strip()) for p in src[8].split("|")],
             "columns": [p.strip() for p in src[9].split("|")],
+            "specLabels": SPEC_LABELS[lang],
         }
 
     out = {
-        "ui": {"pl": ui(pl), "en": ui(en)},
+        "ui": {"pl": ui(pl, "pl"), "en": ui(en, "en")},
         "meta": meta,
         "order": [k for _, k in order],
         "cat": page_cat,
