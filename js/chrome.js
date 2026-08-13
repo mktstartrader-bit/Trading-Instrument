@@ -13,9 +13,11 @@
     return '<div class="dd-col"><h4>' + h + '</h4>' + items.map(function (i) { return '<a href="#">' + i + '</a>'; }).join("") + '</div>';
   }
 
+  var link = function (url) { return window.I18N ? window.I18N.href(url) : url; };
+
   var NAV =
     '<div class="wrap"><div class="nav-inner">' +
-      '<a class="brand" href="index.html">' + LOGO + '</a>' +
+      '<a class="brand" href="' + link("index.html") + '">' + LOGO + '</a>' +
       '<ul class="menu">' +
         '<li><a href="#">Trading ' + caret + '</a><div class="dropdown mega">' +
           col("Getting Started", ["Account Opening", "Trading Account", "Prime ECN", "Funding &amp; Withdrawal"]) +
@@ -37,6 +39,7 @@
         '</div></li>' +
       '</ul>' +
       '<div class="nav-right">' +
+        (window.I18N ? window.I18N.buttonHTML() : "") +
         '<a href="#" class="btn btn-outline">Login</a>' +
         '<a href="#" class="btn btn-primary">Open Live Account</a>' +
         '<button class="hamburger" id="hamburger" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>' +
@@ -93,6 +96,7 @@
     var foot = document.getElementById("site-footer");
     if (nav) { nav.className = "nav"; nav.id = "site-nav"; nav.innerHTML = NAV; }
     if (foot) { foot.className = "footer"; foot.innerHTML = FOOTER; }
+    if (window.I18N) window.I18N.bindButton(nav);
 
     // scroll shadow
     var navEl = document.getElementById("site-nav");

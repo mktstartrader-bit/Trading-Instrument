@@ -7,6 +7,19 @@
   var state = { cat: "all", q: "", limit: 10 };
   var PAGE = 10;
 
+  /* ---------- language ----------
+     UI.* comes from the approved workbook (EN + Final PL columns);
+     per-instrument names/symbols come from that instrument's sheet. */
+  var I = window.I18N;
+  var UI = (I && I.ui) || {};
+  function link(url) { return I ? I.href(url) : url; }
+  function pl(it) { return I ? I.inst(it.id) : null; }
+  function dispSym(it) { var p = pl(it); return (p && p.sym) || it.sym; }
+  function dispName(it) { var p = pl(it); return (p && p.name) || it.name; }
+  function badge(it) { var p = pl(it); return (p && p.badge) || shortBadge(it); }
+  function col(i, fallback) { return (UI.columns && UI.columns[i]) || fallback; }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
   /* ---------- helpers ---------- */
   function fmt(n, dp) { return Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp }); }
   function seeded(str) {
@@ -24,7 +37,12 @@
     pts.forEach(function (p, i) { d += (i ? "L" : "M") + (i * step).toFixed(1) + " " + (h - ((p - min) / rng) * (h - 6) - 3).toFixed(1) + " "; });
     return d;
   }
-  function catLabel(id) { var c = window.CATEGORIES.find(function (c) { return c.id === id; }); return c ? c.label : id; }
+  function catLabel(id) {
+    var localized = I && I.catLabel(id);
+    if (localized) return localized;
+    var c = window.CATEGORIES.find(function (c) { return c.id === id; });
+    return c ? c.label : id;
+  }
   function shortBadge(it) {
     if (it.cat === "forex" || it.cat === "crypto" || it.cat === "metals") return it.sym.split("/")[0].slice(0, 4);
     return it.sym.replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase();
@@ -42,7 +60,7 @@
     el.innerHTML = window.CATEGORIES.map(function (c) {
       var count = c.id === "all" ? TOP.length : window.INSTRUMENTS.filter(function (i) { return i.cat === c.id; }).length;
       return '<button class="chip' + (c.id === state.cat ? " active" : "") + '" data-cat="' + c.id + '">' +
-        '<span class="ico">' + c.ico + '</span>' + c.label + ' <span class="cnt">' + count + '</span></button>';
+        '<span class="ico">' + c.ico + '</span>' + catLabel(c.id) + ' <span class="cnt">' + count + '</span></button>';
     }).join("");
     el.querySelectorAll(".chip").forEach(function (b) {
       b.addEventListener("click", function () { state.cat = b.dataset.cat; state.limit = PAGE; renderFilters(); renderTable(); });
@@ -55,14 +73,17 @@
     var hs = halfSpread(it);
     var bid = it.price - hs, ask = it.price + hs;
     var pts = sparkPoints(it.sym + it.id, it.trend, 26), d = sparkPath(pts, 116, 34);
-    var col = up ? "#0ca678" : "#e5484d";
+    var lineCol = up ? "#0ca678" : "#e5484d";
     var showTag = state.cat === "all";
+    var sym = dispSym(it), name = dispName(it);
+    var url = link("instrument.html?symbol=" + it.id);
     return '' +
-      '<tr class="row" data-href="instrument.html?symbol=' + it.id + '" style="animation-delay:' + Math.min(idx, 20) * 22 + 'ms">' +
+      '<tr class="row" data-href="' + url + '" style="animation-delay:' + Math.min(idx, 20) * 22 + 'ms">' +
         '<td class="left">' +
           '<div class="inst">' +
-            '<span class="ic" style="background:linear-gradient(135deg,' + it.grad[0] + ',' + it.grad[1] + ')"><span>' + shortBadge(it) + '</span></span>' +
-            '<div class="meta"><span class="sym">' + it.sym + '</span><span class="nm">' + it.name + '</span></div>' +
+            '<span class="ic" style="background:linear-gradient(135deg,' + it.grad[0] + ',' + it.grad[1] + ')"><span>' + badge(it) + '</span></span>' +
+            '<div class="meta"><span class="sym">' + sym + '</span>' +
+              (name && name !== sym ? '<span class="nm">' + name + '</span>' : '') + '</div>' +
             (showTag ? '<span class="tag">' + catLabel(it.cat) + '</span>' : '') +
           '</div>' +
         '</td>' +
@@ -70,8 +91,8 @@
         '<td><span class="px tnum" data-base="' + ask + '" data-dp="' + it.dp + '" data-cur="' + it.cur + '">' + (it.cur ? '<span class="cur">' + it.cur + '</span>' : '') + fmt(ask, it.dp) + '</span></td>' +
         '<td class="spread tnum"><b>' + it.spread + '</b></td>' +
         '<td><span class="chg ' + (up ? "up" : "down") + ' tnum">' + arrow(up) + (up ? "+" : "") + it.chg.toFixed(2) + '%</span></td>' +
-        '<td><span class="spark"><svg viewBox="0 0 116 34" preserveAspectRatio="none"><path class="ln" d="' + d + '" stroke="' + col + '"/></svg></span></td>' +
-        '<td><a class="trade" href="instrument.html?symbol=' + it.id + '">Trade <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></td>' +
+        '<td><span class="spark"><svg viewBox="0 0 116 34" preserveAspectRatio="none"><path class="ln" d="' + d + '" stroke="' + lineCol + '"/></svg></span></td>' +
+        '<td><a class="trade" href="' + url + '">' + col(6, "Trade") + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></td>' +
       '</tr>';
   }
 
@@ -92,7 +113,9 @@
       base = window.INSTRUMENTS.filter(function (it) { return it.cat === state.cat; });
     }
     var list = base.filter(function (it) {
-      return !q || it.sym.toLowerCase().indexOf(q) > -1 || it.name.toLowerCase().indexOf(q) > -1;
+      if (!q) return true;
+      var hay = [it.sym, it.name, dispSym(it), dispName(it)].join(" ").toLowerCase();
+      return hay.indexOf(q) > -1;
     });
 
     // section subtitle reflects the full catalogue (55), independent of the active tab
@@ -163,8 +186,38 @@
     setTimeout(function () { set(target); }, dur + 120);
   }
 
+  /* ---------- static copy (workbook: "Trading Instrument page") ---------- */
+  function applyCopy() {
+    if (!I) return;
+    I.applyMeta("home");
+    var set = function (id, html) { var el = document.getElementById(id); if (el && html) el.innerHTML = html; };
+
+    if (UI.heroTitleLead) {
+      set("heroTitle", UI.heroTitleLead + (UI.heroTitleAccent ? ' - <span class="accent">' + UI.heroTitleAccent + "</span>" : ""));
+    }
+    set("heroSub", UI.heroSub);
+    if (UI.heroMeta) {
+      set("mInstrumentsLabel", UI.heroMeta[0]);
+      set("mClassesLabel", UI.heroMeta[1]);
+      /* "Egzekucja < 30 ms" — bold everything from the comparison sign on */
+      var exec = String(UI.heroMeta[2] || ""), at = exec.indexOf("<");
+      set("mExec", at > -1 ? esc(exec.slice(0, at)) + "<b>" + esc(exec.slice(at)) + "</b>" : esc(exec));
+    }
+    set("explorerTitle", UI.explorerTitle);
+    set("explorerSub", UI.explorerSub ? " " + UI.explorerSub : "");
+
+    var search = document.getElementById("search");
+    if (search && UI.searchPlaceholder) search.placeholder = UI.searchPlaceholder;
+
+    var head = document.getElementById("thead-row");
+    if (head && UI.columns) {
+      head.querySelectorAll("th").forEach(function (th, i) { if (UI.columns[i]) th.textContent = UI.columns[i]; });
+    }
+  }
+
   /* ---------- init ---------- */
   function init() {
+    applyCopy();
     renderFilters();
     renderTicker();
     renderTable();

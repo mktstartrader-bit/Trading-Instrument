@@ -6,6 +6,13 @@
 (function () {
   "use strict";
 
+  /* ---------- language ----------
+     In Polish every string below that the workbook covers is read from
+     I.inst(id) — the instrument's own sheet, verbatim. Labels the workbook
+     does not define (Leverage, Margin, Day Range, …) stay in English. */
+  var I = window.I18N;
+  function link(url) { return I ? I.href(url) : url; }
+
   function qs(name) { return new URLSearchParams(location.search).get(name); }
   function fmt(n, dp) { return Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp }); }
   function seeded(str) {
@@ -13,7 +20,12 @@
     for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
     return function () { h += 0x6d2b79f5; var t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   }
-  function catLabel(id) { var c = window.CATEGORIES.find(function (c) { return c.id === id; }); return c ? c.label : id; }
+  function catLabel(id) {
+    var localized = I && I.catLabel(id);
+    if (localized) return localized;
+    var c = window.CATEGORIES.find(function (c) { return c.id === id; });
+    return c ? c.label : id;
+  }
   function shortBadge(it) {
     if (it.cat === "forex" || it.cat === "crypto" || it.cat === "metals") return it.sym.split("/")[0].slice(0, 4);
     return it.sym.replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase();
@@ -233,17 +245,21 @@
 
   function relatedTable(list) {
     if (!list.length) return "";
+    var cols = (I && I.ui && I.ui.columns) || [];
     var rows = list.map(function (it) {
-      var up = it.chg >= 0;
-      return '<tr class="row" data-href="instrument.html?symbol=' + it.id + '">' +
-        '<td class="left"><div class="inst"><span class="ic" style="background:linear-gradient(135deg,' + it.grad[0] + ',' + it.grad[1] + ')"><span>' + shortBadge(it) + '</span></span>' +
-          '<div class="meta"><span class="sym">' + it.sym + '</span><span class="nm">' + it.name + '</span></div></div></td>' +
+      var up = it.chg >= 0, p = I && I.inst(it.id);
+      var sym = (p && p.sym) || it.sym, name = (p && p.name) || it.name;
+      var url = link("instrument.html?symbol=" + it.id);
+      return '<tr class="row" data-href="' + url + '">' +
+        '<td class="left"><div class="inst"><span class="ic" style="background:linear-gradient(135deg,' + it.grad[0] + ',' + it.grad[1] + ')"><span>' + ((p && p.badge) || shortBadge(it)) + '</span></span>' +
+          '<div class="meta"><span class="sym">' + sym + '</span>' +
+            (name && name !== sym ? '<span class="nm">' + name + '</span>' : '') + '</div></div></td>' +
         '<td><span class="px tnum">' + (it.cur || "") + fmt(it.price, it.dp) + '</span></td>' +
         '<td><span class="chg ' + (up ? "up" : "down") + ' tnum">' + arrow(up) + (up ? "+" : "") + it.chg.toFixed(2) + '%</span></td>' +
-        '<td><a class="trade" href="instrument.html?symbol=' + it.id + '">Trade <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></td></tr>';
+        '<td><a class="trade" href="' + url + '">' + (cols[6] || "Trade") + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></td></tr>';
     }).join("");
     return '<div class="rel-table"><div class="table-scroll"><table class="instruments" style="min-width:600px">' +
-      '<thead><tr><th class="left">Instrument</th><th>Price</th><th>24h</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+      '<thead><tr><th class="left">' + (cols[0] || "Instrument") + '</th><th>Price</th><th>' + (cols[4] || "24h") + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
   }
 
   function row(k, v) { return '<div class="row"><span>' + k + '</span><b>' + v + '</b></div>'; }
@@ -251,24 +267,35 @@
   /* ============================================================ PAGE */
 
   function render(it) {
-    document.title = it.sym + " — " + it.name + " | STARTRADER";
+    /* p = this instrument's workbook sheet (Polish); null in English */
+    var p = I && I.inst(it.id);
+    if (p) { I.applyMeta(it.id); } else { document.title = it.sym + " — " + it.name + " | STARTRADER"; }
+
     var up = it.chg >= 0, half = halfSpread(it);
     var bidP = it.price - half, askP = it.price + half;
     var dayLow = it.price * 0.988, dayHigh = it.price * 1.011, yLow = it.price * 0.72, yHigh = it.price * 1.28;
 
+    var sym = (p && p.sym) || it.sym;
+    var name = (p && p.name) || it.name;
+    var home = link("index.html");
+    var crumb = p ? p.crumb : ["Instruments", catLabel(it.cat), it.sym];
+    var variants = p ? p.variants : it.variants.map(function (v) { return [v, variantDesc(v)]; });
+
     document.getElementById("app").innerHTML =
-      '<nav class="breadcrumb"><a href="index.html">Instruments</a><span class="sep">›</span>' +
-        '<a href="index.html">' + catLabel(it.cat) + '</a><span class="sep">›</span><span class="cur">' + it.sym + '</span></nav>' +
+      '<nav class="breadcrumb"><a href="' + home + '">' + crumb[0] + '</a><span class="sep">›</span>' +
+        '<a href="' + home + '">' + crumb[1] + '</a><span class="sep">›</span><span class="cur">' + crumb[2] + '</span></nav>' +
 
       '<div class="d-hero">' +
         '<div class="d-main panel">' +
           '<div class="d-head">' +
-            '<div class="d-badge" style="background:linear-gradient(135deg,' + it.grad[0] + ',' + it.grad[1] + ')">' + shortBadge(it) + '</div>' +
-            '<div class="d-title"><h1>' + it.sym + '</h1><div class="sub">' + it.name + ' <span class="pill">' + catLabel(it.cat) + '</span></div></div>' +
+            '<div class="d-badge" style="background:linear-gradient(135deg,' + it.grad[0] + ',' + it.grad[1] + ')">' + ((p && p.badge) || shortBadge(it)) + '</div>' +
+            /* a few sheets give the same string for the title and the name line */
+            '<div class="d-title"><h1>' + sym + '</h1><div class="sub">' + (name === sym ? "" : name + " ") +
+              '<span class="pill">' + ((p && p.cat) || catLabel(it.cat)) + '</span></div></div>' +
           '</div>' +
           '<div class="d-price-row">' +
             '<div class="d-price">' + (it.cur ? '<span class="cur">' + it.cur + '</span>' : '') + fmt(it.price, it.dp) + '</div>' +
-            '<div class="d-change ' + (up ? "up" : "down") + '">' + arrow(up) + (up ? "+" : "") + it.chg.toFixed(2) + '% today</div>' +
+            '<div class="d-change ' + (up ? "up" : "down") + '">' + arrow(up) + (up ? "+" : "") + it.chg.toFixed(2) + '%' + (p ? "" : " today") + '</div>' +
           '</div>' +
           '<div class="chart-toolbar">' +
             '<div class="range-tabs" id="rangeTabs">' +
@@ -276,7 +303,10 @@
             '</div>' +
             '<div class="chart-type">' +
               '<svg class="ct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v4M7 16v4M7 8h0M17 4v6M17 18v2"/><rect x="4" y="8" width="6" height="8" rx="1.5"/><rect x="14" y="10" width="6" height="8" rx="1.5"/></svg>' +
-              '<select id="chartType" aria-label="Chart type"><option value="candles">Candles</option><option value="line">Line</option></select>' +
+              '<select id="chartType" aria-label="Chart type">' +
+                '<option value="candles">' + ((p && p.chartCandle) || "Candles") + '</option>' +
+                '<option value="line">' + ((p && p.chartLine) || "Line") + '</option>' +
+              '</select>' +
             '</div>' +
           '</div>' +
           '<div class="chart" id="chart"></div>' +
@@ -284,17 +314,18 @@
         '</div>' +
 
         '<div class="d-side">' +
-          '<div class="quote-card panel"><h3>Live Quote</h3>' +
+          '<div class="quote-card panel"><h3>' + ((p && p.quoteHead) || "Live Quote") + '</h3>' +
             '<div class="bidask">' +
-              '<div class="ba sell"><div class="lab">Sell</div><div class="val tnum">' + fmt(bidP, it.dp) + '</div></div>' +
-              '<div class="ba buy"><div class="lab">Buy</div><div class="val tnum">' + fmt(askP, it.dp) + '</div></div>' +
+              '<div class="ba sell"><div class="lab">' + ((p && p.sell) || "Sell") + '</div><div class="val tnum">' + fmt(bidP, it.dp) + '</div></div>' +
+              '<div class="ba buy"><div class="lab">' + ((p && p.buy) || "Buy") + '</div><div class="val tnum">' + fmt(askP, it.dp) + '</div></div>' +
             '</div>' +
-            '<div class="d-cta"><a href="#" class="btn btn-sell">Sell</a><a href="#" class="btn btn-buy">Buy</a></div>' +
+            '<div class="d-cta"><a href="#" class="btn btn-sell">' + ((p && p.sell) || "Sell") + '</a>' +
+              '<a href="#" class="btn btn-buy">' + ((p && p.buy) || "Buy") + '</a></div>' +
           '</div>' +
           '<div class="d-banner">' +
-            bcell("Trading Symbol", it.sym) +
-            bcell("Leverage", "Up to " + it.leverage) +
-            bcell("Margin", "from " + marginPct(it.leverage)) +
+            bcell("Trading Symbol", (p && p.tradeSym) || it.sym) +
+            bcell("Leverage", ((p && p.levPrefix) || "Up to") + " " + it.leverage) +
+            bcell("Margin", ((p && p.marginPrefix) || "from") + " " + marginPct(it.leverage)) +
             bcell("Trading Hours (GMT)", it.hours) +
           '</div>' +
           '<div class="mini-stats panel">' +
@@ -305,24 +336,32 @@
         '</div>' +
       '</div>' +
 
-      '<div class="panel pad" style="margin-top:16px"><h3>About ' + it.sym + '</h3><div class="muted">' + it.name + '</div>' +
-        '<p><b>' + it.sym + '</b> ' + (about[it.cat] || "") + '</p>' +
+      '<div class="panel pad" style="margin-top:16px"><h3>' + ((p && p.aboutHead) || ("About " + it.sym)) + '</h3>' +
+        '<div class="muted">' + ((p && p.aboutName) || it.name) + '</div>' +
+        '<p>' + (p ? p.about : '<b>' + it.sym + '</b> ' + (about[it.cat] || "")) + '</p>' +
         '<div class="about-cols">' +
-          '<div><div class="about-sub">Why trade ' + it.sym + ' with STARTRADER</div>' + ulist(whyPoints(it), ICO_CHECK) + '</div>' +
-          '<div><div class="about-sub">Key market drivers</div>' + ulist(DRIVERS[it.cat] || [], ICO_DOT) + '</div>' +
+          '<div><div class="about-sub">' + ((p && p.whyHead) || ("Why trade " + it.sym + " with STARTRADER")) + '</div>' +
+            ulist(p ? p.why : whyPoints(it), ICO_CHECK) + '</div>' +
+          '<div><div class="about-sub">' + ((p && p.driversHead) || "Key market drivers") + '</div>' +
+            ulist(p ? p.drivers : (DRIVERS[it.cat] || []), ICO_DOT) + '</div>' +
         '</div>' +
       '</div>' +
 
-      (it.variants && it.variants.length ?
-        '<div class="panel pad" style="margin-top:16px"><h3>Available Symbols</h3>' +
-          '<div class="muted">The same instrument is offered on ' + it.variants.length + ' account type' + (it.variants.length > 1 ? "s" : "") + ' / data feed' + (it.variants.length > 1 ? "s" : "") + '. Symbol suffixes vary by platform and account.</div>' +
-          '<div class="vgrid">' + it.variants.map(function (v) {
-            return '<div class="vitem"><span class="vsym">' + v + '</span><span class="vdesc">' + variantDesc(v) + '</span></div>';
+      (variants && variants.length ?
+        '<div class="panel pad" style="margin-top:16px"><h3>' + ((p && p.symbolsHead) || "Available Symbols") + '</h3>' +
+          '<div class="muted">' + (p ? p.symbolsIntro :
+            "The same instrument is offered on " + variants.length + " account type" + (variants.length > 1 ? "s" : "") +
+            " / data feed" + (variants.length > 1 ? "s" : "") + ". Symbol suffixes vary by platform and account.") + '</div>' +
+          '<div class="vgrid">' + variants.map(function (v) {
+            return '<div class="vitem"><span class="vsym">' + v[0] + '</span><span class="vdesc">' + v[1] + '</span></div>';
           }).join("") + '</div></div>' : "") +
 
-      '<div class="related"><h3>Related in ' + catLabel(it.cat) + '</h3>' +
+      '<div class="related"><h3>' + ((p && p.relatedHead) || ("Related in " + catLabel(it.cat))) + '</h3>' +
         relatedTable(window.INSTRUMENTS.filter(function (x) { return x.cat === it.cat && x.id !== it.id; }).slice(0, 4)) +
-        '<a href="index.html" class="btn btn-outline back-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back to all instruments</a>' +
+        '<a href="' + home + '" class="btn btn-outline back-btn">' +
+          /* the workbook's own back label already carries its arrow */
+          (p ? p.back : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back to all instruments') +
+        '</a>' +
       '</div>';
 
     var chartState = { range: "1D", type: "candles" };
@@ -347,7 +386,7 @@
       '<div class="empty" style="padding:120px 20px"><div class="big">🧭</div>' +
       '<h2 style="font-size:24px;margin-bottom:8px;color:var(--navy)">Instrument not found</h2>' +
       '<p style="margin-bottom:22px">We couldn\'t find “' + (id || "") + '”.</p>' +
-      '<a href="index.html" class="btn btn-primary">Browse all instruments</a></div>';
+      '<a href="' + link("index.html") + '" class="btn btn-primary">Browse all instruments</a></div>';
   }
 
   function init() {
