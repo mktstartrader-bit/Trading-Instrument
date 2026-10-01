@@ -1,0 +1,8 @@
+{
+  "_comment": "Anchor text for Column G links that give only a bare URL. Keyed ticker -> URL -> exact substring of that row's Content (PL). Column G entries already written as 'anchor -> url' need no entry here.",
+  "EURUSD": {
+    "https://www.startrader.com/pl/trading-app/": "Aplikacja mobilna STARTRADER",
+    "https://www.startrader.com/pl/star-copy/": "STAR Copy",
+    "https://www.startrader.com/pl/demo-account/": "konto demo"
+  }
+}

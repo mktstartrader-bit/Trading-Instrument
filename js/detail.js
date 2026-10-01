@@ -359,6 +359,9 @@
             return '<div class="vitem"><span class="vsym">' + v[0] + '</span><span class="vdesc">' + v[1] + '</span></div>';
           }).join("") + '</div></div>' : "") +
 
+      /* long-form PL section from the content workbook (empty for other pages / EN) */
+      (window.InstrumentAdditionalContent ? window.InstrumentAdditionalContent.html(it.id) : "") +
+
       '<div class="related"><h3>' + ((p && p.relatedHead) || ("Related in " + catLabel(it.cat))) + '</h3>' +
         relatedTable(window.INSTRUMENTS.filter(function (x) { return x.cat === it.cat && x.id !== it.id; }).slice(0, 4)) +
         '<a href="' + home + '" class="btn btn-outline back-btn">' +
