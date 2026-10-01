@@ -4,5 +4,70 @@
     "https://www.startrader.com/pl/trading-app/": "Aplikacja mobilna STARTRADER",
     "https://www.startrader.com/pl/star-copy/": "STAR Copy",
     "https://www.startrader.com/pl/demo-account/": "konto demo"
+  },
+  "USDCAD": {
+    "https://www.startrader.com/pl/commodities/": "rynkach surowcowych",
+    "https://www.startrader.com/pl/accounts/": "Rachunek",
+    "https://www.startrader.com/pl/star-copy/": "STAR Copy"
+  },
+  "GBPUSD": {
+    "https://www.startrader.com/pl/mt5/": "MetaTrader 5"
+  },
+  "USOUSD": {
+    "https://www.startrader.com/pl/commodities/": "rynku surowców",
+    "https://www.startrader.com/star-copy/": "STAR Copy"
+  },
+  "CL-OIL": {
+    "https://www.startrader.com/pl/mt5/": "MetaTrader 5"
+  },
+  "NAS100": {
+    "https://www.startrader.com/pl/indices/": "indeksami technologicznymi",
+    "https://www.startrader.com/pl/trading-app/": "aplikacji mobilnej STARTRADER",
+    "https://www.startrader.com/pl/demo-account/": "koncie demo"
+  },
+  "DJ30": {
+    "https://www.startrader.com/pl/webinars/": "webinary"
+  },
+  "GER40": {
+    "https://www.startrader.com/pl/indices/": "amerykańskich indeksów"
+  },
+  "XAGUSD": {
+    "https://www.startrader.com/pl/demo-account/": "konta demo",
+    "https://www.startrader.com/pl/accounts/": "rachunku w STARTRADER"
+  },
+  "XAU/AUD": {
+    "https://www.startrader.com/pl/cfd/": "ofertę handlu kontraktami CFD",
+    "https://www.startrader.com/pl/ib-register/": "program partnerski"
+  },
+  "MSTR": {
+    "https://www.startrader.com/glossary/stop-loss-take-profit/": "zlecenia stop-loss i take-profit",
+    "https://www.startrader.com/pl/": "STARTRADER"
+  },
+  "TSLA": {
+    "https://www.startrader.com/pl/category/shares/": "kontraktów CFD na akcje",
+    "https://www.startrader.com/pl/education/": "materiałów edukacyjnych"
+  },
+  "NIO": {
+    "https://www.startrader.com/glossary/stop-loss-take-profit/": "zlecenia stop-loss i take-profit",
+    "https://www.startrader.com/pl/company/": "STARTRADER"
+  },
+  "BITO": {
+    "https://www.startrader.com/glossary/stop-loss-take-profit/": "zlecenia stop-loss i take-profit",
+    "https://www.startrader.com/pl/demo-account/": "koncie demo"
+  },
+  "BITB": {
+    "https://www.startrader.com/getting-started/": "sprawdź możliwości dostępne w STARTRADER",
+    "https://www.startrader.com/pl/accounts/": "typy rachunków",
+    "https://www.startrader.com/pl/funding/": "różne metody wpłat"
+  },
+  "DXYZ": {
+    "https://www.startrader.com/pl/company/": "informacjami o firmie",
+    "https://www.startrader.com/glossary/stop-loss-take-profit/": "zlecenia stop-loss/take-profit",
+    "https://www.startrader.com/pl/demo-account/": "koncie demo"
+  },
+  "EWJ": {
+    "https://www.startrader.com/pl/getting-started/": "jak handlować",
+    "https://www.startrader.com/glossary/stop-loss-take-profit/": "zlecenia stop-loss/take-profit",
+    "https://www.startrader.com/pl/demo-account/": "koncie demo"
   }
 }
