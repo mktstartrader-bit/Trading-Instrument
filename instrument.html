@@ -6,13 +6,41 @@
   <title>Instrument — STARTRADER</title>
   <meta name="description" content="Live pricing, contract specifications and charts for STARTRADER instruments." />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="assets/favicon-16.png" type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" />
+  <meta name="theme-color" content="#0D0D4B" />
+
+  <!-- Scripts load in parallel without blocking render and still run in order.
+       English never downloads the Polish copy; PL loads it (and, on instrument pages,
+       only that instrument's long-form section). -->
+  <script>
+    (function () {
+      /* same selection order as js/i18n.js: ?lang= → localStorage → "en" */
+      var q = new URLSearchParams(location.search), ok = /^(en|pl)$/, lang = (q.get("lang") || "").toLowerCase();
+      if (!ok.test(lang)) { try { lang = (localStorage.getItem("startrader_lang") || "").toLowerCase(); } catch (e) { lang = ""; } }
+      var files = ["i18n", "data", "additional-content", "chrome", "detail"];
+      /* pages with a long-form PL section — rewritten by tools/build-pl-additional.py */
+      var PL_PAGES = " arkb bitb bito btco cl-oil dj30 dram dxyz eurusd ewj ewy gbpjpy gbpusd ger40 hdb mara mstr nas100 nio nvidia spce tqqq tsla ukousd ung usdcad usousd xagusd xauaud xauusd ";
+      var sym = (q.get("symbol") || "").toLowerCase();
+      if (lang === "pl" && /^[a-z0-9-]+$/.test(sym) && PL_PAGES.indexOf(" " + sym + " ") > -1) files.splice(2, 0, "pl-additional/" + sym);
+      if (lang === "pl") files.unshift("content-pl");
+      files.forEach(function (f) {
+        var s = document.createElement("script");
+        s.src = "js/" + f + ".js";
+        s.async = false;
+        document.head.appendChild(s);
+      });
+    })();
+  </script>
+
+  <link rel="preload" href="assets/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/logo.svg" as="image" fetchpriority="high" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <header id="site-nav"></header>
+  <header id="site-nav" class="nav"></header>
 
   <main class="detail">
     <div class="wrap" id="app"></div>
@@ -20,9 +48,5 @@
 
   <footer id="site-footer"></footer>
 
-  <script src="js/symbol_all.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/chrome.js"></script>
-  <script src="js/detail.js"></script>
 </body>
 </html>

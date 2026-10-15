@@ -1,16 +1,33 @@
 /* ============================================================
    STARTRADER — Instrument dataset builder
-   Consumes the real symbol universe from symbol_all.js (`data_all`)
-   -> deduplicates feed/account variants to one card per instrument
-   -> assigns friendly names + asset-appropriate demo pricing
+   The page list is fixed by the approved content workbook
+   ("Trading Instrument-PL Content" → Page Index): 55 instruments,
+   one page per symbol, each offered on 3 account types / feeds.
+   Symbols here MUST stay in sync with js/content-pl.js — its keys
+   are slug(symbol), and a mismatch leaves a page without copy.
+
+   Names and asset-appropriate demo pricing are assigned below.
    Prices/changes are SIMULATED placeholders (seeded, stable per
    symbol) — swap the pricing block for your live market feed.
    ============================================================ */
 (function () {
   "use strict";
 
-  var RAW = (typeof data_all !== "undefined") ? data_all
-          : (typeof window !== "undefined" && window.data_all) ? window.data_all : {};
+  /* -------- the 55 pages, per category (order = ranking) --------
+     Forex 10 · Commodities 10 · Indices 10 · Metals 5 · Shares 10 · ETFs 10.
+     Each symbol surfaces its account/feed variants on the detail page. -------- */
+  var CATALOGUE = {
+    "Forex":       ["EURUSD", "GBPJPY", "USDCAD", "GBPUSD", "USDJPY", "AUDCAD", "USDCHF", "AUDUSD", "EURJPY", "NZDCAD"],
+    "Commodities": ["UKOUSD", "USOUSD", "CL-OIL", "XPDUSD", "XPTUSD", "XALUSD", "COPPER-C", "NG-C", "Coffee-C", "Cocoa-C"],
+    "Indices":     ["NAS100", "DJ30", "GER40", "SP500", "JPN225ft", "Nikkei225", "FRA40", "HK50", "UK100", "US2000"],
+    "Metals":      ["XAUUSD", "XAGUSD", "XAUAUD", "XAUEUR", "XAGAUD"],
+    "Share CFDs":  ["MARA", "MSTR", "NVIDIA", "SPCE", "TSLA", "HDB", "NIO", "INTEL", "AMAZON", "AAPL"],
+    "ETF":         ["BITO", "EWY", "ARKB", "TQQQ", "UNG", "BITB", "BTCO", "DRAM", "DXYZ", "EWJ"]
+  };
+  /* account types / data feeds every symbol is offered on (workbook rows 30-32) */
+  function variantsOf(sym) { return [sym + ".c", sym + "+", sym]; }
+  /* curated cross-asset "Most Traded" list (ranking order) shown on the default tab */
+  var MOST_TRADED_TOP = ["eurusd", "xauusd", "nas100", "tsla", "gbpusd", "nvidia", "usousd", "sp500", "usdjpy", "dj30"];
 
   /* -------- category mapping (source label -> app category) -------- */
   var CAT_MAP = {
@@ -19,10 +36,9 @@
     "Commodities": { id: "commodities", label: "Commodities", ico: "🛢️" },
     "Indices":     { id: "indices",     label: "Indices",     ico: "📊" },
     "Share CFDs":  { id: "shares",      label: "Shares",      ico: "🏛️" },
-    "Crypto":      { id: "crypto",      label: "Crypto",      ico: "₿" },
     "ETF":         { id: "etf",         label: "ETFs",        ico: "📈" }
   };
-  var CAT_ORDER = ["forex", "metals", "commodities", "indices", "shares", "crypto", "etf"];
+  var CAT_ORDER = ["forex", "commodities", "indices", "metals", "shares", "etf"];
 
   /* -------- seeded PRNG (stable per symbol) -------- */
   function seeded(str) {
@@ -32,18 +48,6 @@
   }
   function rnum(rng, lo, hi) { return lo + rng() * (hi - lo); }
 
-  /* -------- variant normalization -> canonical base symbol -------- */
-  function baseSymbol(raw, catLabel) {
-    var s = String(raw).trim();
-    s = s.replace(/#$/, "");
-    s = s.replace(/(\.crp|\.m\+|\.bc|\.24H|\.24h|\.c|\.z|\.r|\.i|\.m)$/i, "");
-    s = s.replace(/\+$/, "");
-    s = s.replace(/(\.crp|\.m\+|\.bc|\.24H|\.24h|\.c|\.z|\.r|\.i|\.m)$/i, "");
-    s = s.replace(/\.$/, "");                 // trailing dot: "NVIDIA." "AT&T."
-    if (catLabel === "Indices" || catLabel === "Commodities") s = s.replace(/ft$/, ""); // futures
-    s = s.replace(/-C$/, "");                 // commodity contract variant "COPPER-C"
-    return s;
-  }
   function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
 
   /* -------- name dictionaries -------- */
@@ -65,19 +69,20 @@
     SPCX: "SpaceX Token", SAN: "Santiment", NER: "Nervos", INC: "Incognito", AGI: "SingularityNET", MTC: "Metacade",
     NXPC: "NxPC", OCN: "Odyssey", SUS: "SUSD" };
   var INDEX = { NAS100: "US Tech 100", DJ30: "Wall Street 30", GER40: "Germany 40", SP500: "US 500", SPX500: "US 500",
-    US30: "Wall Street 30", JPN225: "Japan 225", Nikkei225: "Nikkei 225", FRA40: "France 40", HK50: "Hong Kong 50",
+    US30: "Wall Street 30", JPN225: "Japan 225", JPN225ft: "Japan 225 Futures", Nikkei225: "Nikkei 225", FRA40: "France 40", HK50: "Hong Kong 50",
     UK100: "UK 100", US2000: "US Small Cap 2000", USDX: "US Dollar Index", CHINA50: "China A50", TWINDEX: "Taiwan Index",
     EU50: "Europe 50", NETH25: "Netherlands 25", SGP20: "Singapore 20", SPI200: "Australia 200", ES35: "Spain 35",
     SWI20: "Switzerland 20", VIX: "Volatility Index", BVSPX: "Brazil Index", CHINAH: "China H-Shares",
     AUS200: "Australia 200", EUSTX50: "Euro Stoxx 50", HKG33: "Hong Kong 33", HKTECH: "Hang Seng Tech",
     IND50: "India 50", SA40: "South Africa 40" };
   var COMMOD = { UKOUSD: "Brent Crude Oil", USOUSD: "WTI Crude Oil", "CL-OIL": "Crude Oil (WTI)", XPDUSD: "Palladium",
-    XPTUSD: "Platinum", XALUSD: "Aluminium", COPPER: "Copper", NG: "Natural Gas", GAS: "Natural Gas", Coffee: "Coffee",
-    Cocoa: "Cocoa", OJ: "Orange Juice", Sugar: "Sugar", GASOIL: "Gas Oil", Cotton: "Cotton", Soybean: "Soybean", Wheat: "Wheat" };
+    XPTUSD: "Platinum", XALUSD: "Aluminium", COPPER: "Copper", "COPPER-C": "Copper", NG: "Natural Gas", "NG-C": "Natural Gas",
+    GAS: "Natural Gas", Coffee: "Coffee", "Coffee-C": "Coffee", Cocoa: "Cocoa", "Cocoa-C": "Cocoa",
+    OJ: "Orange Juice", Sugar: "Sugar", GASOIL: "Gas Oil", Cotton: "Cotton", Soybean: "Soybean", Wheat: "Wheat" };
   var ETF = { EWY: "iShares South Korea", TQQQ: "ProShares UltraPro QQQ", ARKB: "ARK 21Shares Bitcoin", BITB: "Bitwise Bitcoin",
     BITO: "ProShares Bitcoin Strategy", BTCO: "Invesco Galaxy Bitcoin", EWJ: "iShares Japan", EWZ: "iShares Brazil",
     GBTC: "Grayscale Bitcoin Trust", IBIT: "iShares Bitcoin Trust", INDA: "iShares India", MCHI: "iShares China",
-    TLT: "iShares 20+ Yr Treasury", UNG: "US Natural Gas Fund" };
+    TLT: "iShares 20+ Yr Treasury", UNG: "US Natural Gas Fund", DRAM: "Themes DRAM Semiconductor ETF", DXYZ: "Destiny Tech100" };
   var SHARE = { AAPL: "Apple", TSLA: "Tesla", NVIDIA: "NVIDIA", META: "Meta Platforms", MSFT: "Microsoft",
     AMAZON: "Amazon", GOOG: "Alphabet", NFLX: "Netflix", INTEL: "Intel", ORCL: "Oracle", AMD: "AMD", CRM: "Salesforce",
     ADBE: "Adobe", DISNEY: "Walt Disney", BOEING: "Boeing", KO: "Coca-Cola", PEP: "PepsiCo", MCD: "McDonald's",
@@ -90,7 +95,8 @@
     NIO: "NIO", XPEV: "XPeng", LI: "Li Auto", JD: "JD.com", PDD: "PDD Holdings", TOYOTA: "Toyota", HSBCn: "HSBC",
     BUD: "Anheuser-Busch", UL: "Unilever", NVS: "Novartis", NTES: "NetEase", TCOM: "Trip.com", "AT&T": "AT&T",
     "CMCSA": "Comcast", VZ: "Verizon", MMM: "3M", HON: "Honeywell", CAT: "Caterpillar", GE: "GE Aerospace",
-    LULU: "Lululemon", MSTR: "MicroStrategy", OPENAIUSD: "OpenAI (Pre-IPO)", ANTHUSD: "Anthropic (Pre-IPO)", SPCX: "SpaceX (Pre-IPO)" };
+    LULU: "Lululemon", MSTR: "MicroStrategy", MARA: "MARA Holdings", SPCE: "Virgin Galactic", HDB: "HDFC Bank",
+    OPENAIUSD: "OpenAI (Pre-IPO)", ANTHUSD: "Anthropic (Pre-IPO)", SPCX: "SpaceX (Pre-IPO)" };
 
   /* -------- currency symbol + magnitude helpers -------- */
   var CURSYM = { USD: "$", EUR: "€", JPY: "¥", GBP: "£", AUD: "A$", CAD: "C$", CHF: "" };
@@ -100,13 +106,13 @@
     PLN: 0.25, CZK: 0.043, HUF: 0.0027, INR: 0.012, THB: 0.0278, TWD: 0.031, ILS: 0.27, KRW: 0.00075,
     IDR: 0.0000625, BRL: 0.185, AED: 0.272, CLP: 0.00108, COP: 0.000256, USC: 0.01, XAU: 2338 };
   var INDEX_ANCHOR = { NAS100: 19850, DJ30: 39100, GER40: 18200, SP500: 5487, SPX500: 5487, US30: 39100, JPN225: 38600,
-    Nikkei225: 38600, FRA40: 7600, HK50: 17800, UK100: 8215, US2000: 2020, USDX: 104.2, CHINA50: 12100, TWINDEX: 22800,
+    JPN225ft: 38720, Nikkei225: 38600, FRA40: 7600, HK50: 17800, UK100: 8215, US2000: 2020, USDX: 104.2, CHINA50: 12100, TWINDEX: 22800,
     EU50: 4950, NETH25: 900, SGP20: 3400, SPI200: 7900, ES35: 11100, SWI20: 11900, VIX: 14.5, BVSPX: 127000,
     CHINAH: 6400, AUS200: 7900, EUSTX50: 4950, HKG33: 17800, HKTECH: 3700, IND50: 23500, SA40: 79000 };
   var COMMOD_ANCHOR = { UKOUSD: 85.6, USOUSD: 81.2, "CL-OIL": 81.2, XPDUSD: 968, XPTUSD: 1012, XALUSD: 2450,
-    COPPER: 4.52, NG: 2.78, GAS: 2.78, Coffee: 228, Cocoa: 7600, OJ: 410, Sugar: 19.8, GASOIL: 760, Cotton: 72,
-    Soybean: 1180, Wheat: 578 };
-  var METAL_ANCHOR = { XAUUSD: 2338, XAGUSD: 29.8, XAUAUD: 3560, XAUEUR: 2150, XAGAUD: 45.4 };
+    COPPER: 4.52, "COPPER-C": 4.52, NG: 2.78, "NG-C": 2.78, GAS: 2.78, Coffee: 228, "Coffee-C": 228,
+    Cocoa: 7600, "Cocoa-C": 7600, OJ: 410, Sugar: 19.8, GASOIL: 760, Cotton: 72, Soybean: 1180, Wheat: 578 };
+  var METAL_ANCHOR = { XAUUSD: 2338, XAGUSD: 29.8, XAUAUD: 3560, XAUEUR: 2150, XAGAUD: 45.4, XPTUSD: 1012, XPDUSD: 968 };
   var CRYPTO_ANCHOR = { BTC: 61284, ETH: 3392, SOL: 142, BCH: 395, XRP: 0.48, XLM: 0.11, BNB: 585, ADA: 0.45,
     DOG: 0.13, DOT: 6.2, LTC: 72, TRX: 0.12, LNK: 14.2, UNI: 9.8, ETC: 26, FIL: 4.6, ZEC: 24, BAT: 0.24,
     OKB: 42, SHB: 0.000023, ONDO: 1.1, XTZ: 0.9, ATM: 7.4, WLD: 2.3, CRO: 0.09, ALG: 0.16, AVA: 27,
@@ -155,7 +161,7 @@
       out.sym = base;
       out.name = COMMOD[base] || base;
       out.price = (COMMOD_ANCHOR[base] || rnum(rng, 5, 500)) * (0.97 + rng() * 0.06);
-      out.dp = (base === "NG" || base === "GAS" || base === "COPPER") ? 3 : 2;
+      out.dp = out.price < 10 ? 3 : 2;   // gas & copper quote in fractions of a dollar
       out.cur = "$"; out.leverage = "1:100"; out.hours = "23/5";
       out.spread = +( rnum(rng, 0.02, 0.8) ).toFixed(2);
     } else if (catId === "indices") {
@@ -203,35 +209,36 @@
   function anchoredShare(base, rng) {
     var a = { AAPL: 214, TSLA: 183, NVIDIA: 126, META: 504, MSFT: 449, AMAZON: 193, GOOG: 178, NFLX: 640, INTEL: 34,
       AMD: 158, TSM: 174, AVGO: 168, COIN: 232, MSTR: 1580, COST: 880, MA: 462, VISA: 275, JPM: 205, UNH: 495,
-      WMT: 68, HD: 345, MCD: 255, KO: 63, BOEING: 178, OPENAIUSD: 210, ANTHUSD: 185 }[base];
+      WMT: 68, HD: 345, MCD: 255, KO: 63, BOEING: 178, MARA: 18, SPCE: 6, HDB: 66, NIO: 5,
+      OPENAIUSD: 210, ANTHUSD: 185 }[base];
     return (a || rnum(rng, 40, 400)) * (0.97 + rng() * 0.06);
   }
 
   /* -------- build the whole universe -------- */
   var instruments = [];
   var catCounts = {};
-  Object.keys(RAW).forEach(function (label) {
+  Object.keys(CATALOGUE).forEach(function (label) {
     var meta = CAT_MAP[label];
     if (!meta) return;
-    var groups = {};   // baseSymbol -> [variants]
-    (RAW[label] || []).forEach(function (raw) {
-      var base = baseSymbol(raw, label);
-      if (!base) return;
-      (groups[base] = groups[base] || []).push(raw);
+    (CATALOGUE[label] || []).forEach(function (sym) {
+      instruments.push(build(sym, meta.id, variantsOf(sym)));
     });
-    Object.keys(groups).forEach(function (base) {
-      instruments.push(build(base, meta.id, groups[base]));
-    });
-    catCounts[meta.id] = Object.keys(groups).length;
+    catCounts[meta.id] = CATALOGUE[label].length;
   });
 
   /* -------- categories list for the UI -------- */
-  var categories = [{ id: "all", label: "All Markets", ico: "◎" }];
+  var categories = [{ id: "all", label: "Most Traded", ico: "◎" }];
   CAT_ORDER.forEach(function (id) {
     var src = Object.keys(CAT_MAP).find(function (k) { return CAT_MAP[k].id === id; });
     if (src && catCounts[id]) categories.push({ id: id, label: CAT_MAP[src].label, ico: CAT_MAP[src].ico });
   });
 
+  /* curated "Most Traded" -> keep only ids that resolved to a real instrument, in order */
+  var byId = {};
+  instruments.forEach(function (it) { byId[it.id] = it; });
+  var mostTraded = MOST_TRADED_TOP.filter(function (id) { return byId[id]; });
+
   window.INSTRUMENTS = instruments;
   window.CATEGORIES = categories;
+  window.MOST_TRADED_TOP = mostTraded;
 })();

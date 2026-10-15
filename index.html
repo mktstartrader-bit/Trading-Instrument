@@ -4,15 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trading Instruments — STARTRADER</title>
-  <meta name="description" content="Explore 600+ tradable instruments across Forex, Metals, Commodities, Indices, Shares, Crypto and ETFs with STARTRADER." />
+  <meta name="description" content="Explore the most-traded instruments across Forex, Commodities, Indices, Metals, Shares and ETFs with STARTRADER." />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="assets/favicon-16.png" type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" />
+  <meta name="theme-color" content="#0D0D4B" />
+
+  <!-- Scripts load in parallel without blocking render and still run in order.
+       English never downloads the Polish copy; PL loads it (and, on instrument pages,
+       only that instrument's long-form section). -->
+  <script>
+    (function () {
+      /* same selection order as js/i18n.js: ?lang= → localStorage → "en" */
+      var q = new URLSearchParams(location.search), ok = /^(en|pl)$/, lang = (q.get("lang") || "").toLowerCase();
+      if (!ok.test(lang)) { try { lang = (localStorage.getItem("startrader_lang") || "").toLowerCase(); } catch (e) { lang = ""; } }
+      var files = ["i18n", "data", "chrome", "app"];
+      if (lang === "pl") {
+        files.unshift("content-pl");
+        /* the static hero copy is English: keep it hidden until app.js swaps in the
+           Polish text, so the longer heading can't shift the page (3s safety net) */
+        var root = document.documentElement;
+        root.classList.add("i18n-wait");
+        setTimeout(function () { root.classList.remove("i18n-wait"); }, 3000);
+      }
+      files.forEach(function (f) {
+        var s = document.createElement("script");
+        s.src = "js/" + f + ".js";
+        s.async = false;
+        document.head.appendChild(s);
+      });
+    })();
+  </script>
+
+  <link rel="preload" href="assets/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/logo.svg" as="image" fetchpriority="high" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <header id="site-nav"></header>
+  <header id="site-nav" class="nav"></header>
 
   <!-- HERO -->
   <section class="hero">
@@ -20,13 +51,12 @@
       <div class="hero-banner reveal d1">
         <div class="hero-banner-inner">
           <div class="eyebrow"><span class="dot"></span> Live Markets</div>
-          <h1>Trade the world's <span class="accent">financial markets</span></h1>
-          <p>A single, elegant view of every instrument STARTRADER offers — search, compare spreads and open any market for full contract specs and live charts.</p>
+          <h1 id="heroTitle">Trade the world's <span class="accent">financial markets</span></h1>
+          <p id="heroSub">The most actively traded instruments across Forex, Commodities, Indices, Metals, Shares and ETFs — compare live spreads and open any market for full contract specs and charts.</p>
           <div class="hero-meta">
-            <span><b id="mInstruments">0</b> instruments</span><span class="sepdot">·</span>
-            <span><b id="mClasses">0</b> asset classes</span><span class="sepdot">·</span>
-            <span>Spreads from <b>0.0 pips</b></span><span class="sepdot">·</span>
-            <span>Execution <b>&lt; 30 ms</b></span>
+            <span><b id="mInstruments">0</b> <span id="mInstrumentsLabel">instruments</span></span><span class="sepdot">·</span>
+            <span><b id="mClasses">0</b> <span id="mClassesLabel">asset classes</span></span><span class="sepdot">·</span>
+            <span id="mExec">Execution <b>&lt; 30 ms</b></span>
           </div>
           <div class="ticker"><div class="ticker-track" id="ticker"></div></div>
         </div>
@@ -39,14 +69,8 @@
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <h2>Instrument Explorer</h2>
-          <p><span id="resultCount">0</span> instruments · select any row for details</p>
-        </div>
-        <div class="sort">
-          <button data-sort="default" class="active">All</button>
-          <button data-sort="gainers">Gainers</button>
-          <button data-sort="losers">Losers</button>
-          <button data-sort="az">A–Z</button>
+          <h2 id="explorerTitle">Instrument Explorer</h2>
+          <p><span id="resultCount">0</span><span id="explorerSub"> instruments · select any row for details</span></p>
         </div>
       </div>
 
@@ -63,14 +87,13 @@
         <div class="table-scroll">
           <table class="instruments">
             <thead>
-              <tr>
+              <tr id="thead-row">
                 <th class="left">Instrument</th>
                 <th>Sell</th>
                 <th>Buy</th>
-                <th>Spread</th>
-                <th>24h Change</th>
+                <th>Change</th>
                 <th>7-Day Trend</th>
-                <th></th>
+                <th>Trade</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -83,9 +106,5 @@
 
   <footer id="site-footer"></footer>
 
-  <script src="js/symbol_all.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/chrome.js"></script>
-  <script src="js/app.js"></script>
 </body>
 </html>
