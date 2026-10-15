@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate js/content-pl-additional.js — the long-form Polish section added below
+Generate js/pl-additional/<page>.js — the long-form Polish section added below
 each instrument page's existing content — from the approved workbook.
 
 Source of truth: "Instrument_Pages_PL_Content_EURUSD_to_EWJ.xlsx"
@@ -33,9 +33,10 @@ import openpyxl
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_XLSX = os.path.expanduser("~/Downloads/Instrument_Pages_PL_Content_EURUSD_to_EWJ.xlsx")
-OUT = os.path.join(HERE, "..", "js", "content-pl-additional.js")
+OUT_DIR = os.path.join(HERE, "..", "js", "pl-additional")
 DATA_JS = os.path.join(HERE, "..", "js", "data.js")
 ANCHORS = os.path.join(HERE, "link-anchors.json")
+DETAIL_HTML = os.path.join(HERE, "..", "instrument.html")
 
 # Column E -> block type rendered by js/additional-content.js
 TYPES = {"H1": "h1", "H2": "h2", "H3": "h3", "Paragraph": "p", "Bullet": "li"}
@@ -127,20 +128,32 @@ def main():
         if want != len(p["blocks"]):
             raise SystemExit("%s: %d blocks built, Instrument Index expects %s" % (p["ticker"], len(p["blocks"]), want))
 
-    body = json.dumps({k: pages[k] for k in order}, ensure_ascii=False, indent=2)
+    # one compact file per page: an instrument page loads only its own copy, and only in PL
     header = (
-        "/* ============================================================\n"
-        "   AUTO-GENERATED — do not edit by hand.\n"
-        "   Source: Instrument_Pages_PL_Content_EURUSD_to_EWJ.xlsx\n"
-        "           (\"Instrument Page Content PL\", Column F verbatim)\n"
-        "   Regenerate: python3 tools/build-pl-additional.py [workbook.xlsx] [--only EURUSD,…]\n"
-        "   ============================================================ */\n"
-        "window.PL_ADDITIONAL =\n"
+        "/* AUTO-GENERATED — do not edit by hand. Source: Instrument_Pages_PL_Content_EURUSD_to_EWJ.xlsx\n"
+        "   (\"Instrument Page Content PL\", Column F verbatim). Regenerate: python3 tools/build-pl-additional.py */\n"
     )
-    with open(os.path.abspath(OUT), "w", encoding="utf-8") as f:
-        f.write(header + body + ";\n")
+    out_dir = os.path.abspath(OUT_DIR)
+    os.makedirs(out_dir, exist_ok=True)
+    if not only:
+        for name in os.listdir(out_dir):
+            if name.endswith(".js") and name[:-3] not in pages:
+                os.remove(os.path.join(out_dir, name))
+    for pid in order:
+        body = json.dumps(pages[pid], ensure_ascii=False, separators=(",", ":"))
+        with open(os.path.join(out_dir, pid + ".js"), "w", encoding="utf-8") as f:
+            f.write(header + "(window.PL_ADDITIONAL = window.PL_ADDITIONAL || {})[%s] = %s;\n" % (json.dumps(pid), body))
 
-    print("wrote %s — %d page(s)" % (os.path.abspath(OUT), len(order)))
+    # instrument.html only requests a page file that exists, so refresh its list
+    have = sorted(n[:-3] for n in os.listdir(out_dir) if n.endswith(".js"))
+    html = open(DETAIL_HTML, encoding="utf-8").read()
+    html, n = re.subn(r'var PL_PAGES = "[^"]*";', 'var PL_PAGES = " %s ";' % " ".join(have), html)
+    if n != 1:
+        raise SystemExit("instrument.html: PL_PAGES list not found")
+    with open(DETAIL_HTML, "w", encoding="utf-8") as f:
+        f.write(html)
+
+    print("wrote %s — %d page(s)" % (out_dir, len(order)))
     for pid in order:
         p = pages[pid]
         nl = sum(len(b.get("links", [])) for b in p["blocks"])

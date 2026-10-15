@@ -87,7 +87,7 @@
 
   function whyPoints(it) {
     return [
-      "Spreads from " + it.spread + " with deep institutional liquidity",
+      "Competitive spreads with deep institutional liquidity",
       "Leverage up to " + it.leverage + " — margin from " + marginPct(it.leverage),
       "Go long or short to trade both rising and falling markets",
       "Trade " + it.hours + " with sub-30ms execution on MT4, MT5 & STAR Web Trading"
@@ -262,7 +262,7 @@
         '<td><a class="trade" href="' + url + '">' + (cols[6] || "Trade") + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></td></tr>';
     }).join("");
     return '<div class="rel-table"><div class="table-scroll"><table class="instruments" style="min-width:600px">' +
-      '<thead><tr><th class="left">' + (cols[0] || "Instrument") + '</th><th>Price</th><th>' + (cols[4] || "24h") + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+      '<thead><tr><th class="left">' + (cols[0] || "Instrument") + '</th><th>Price</th><th>' + (cols[4] || "24h") + '</th><th><span class="sr-only">' + (cols[6] || "Trade") + '</span></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
   }
 
   function row(k, v) { return '<div class="row"><span>' + k + '</span><b>' + v + '</b></div>'; }
@@ -317,7 +317,7 @@
         '</div>' +
 
         '<div class="d-side">' +
-          '<div class="quote-card panel"><h3>' + ((p && p.quoteHead) || "Live Quote") + '</h3>' +
+          '<div class="quote-card panel"><h2>' + ((p && p.quoteHead) || "Live Quote") + '</h2>' +
             '<div class="bidask">' +
               '<div class="ba sell"><div class="lab">' + ((p && p.sell) || "Sell") + '</div><div class="val tnum">' + fmt(bidP, it.dp) + '</div></div>' +
               '<div class="ba buy"><div class="lab">' + ((p && p.buy) || "Buy") + '</div><div class="val tnum">' + fmt(askP, it.dp) + '</div></div>' +
@@ -339,7 +339,7 @@
         '</div>' +
       '</div>' +
 
-      '<div class="panel pad" style="margin-top:16px"><h3>' + ((p && p.aboutHead) || ("About " + it.sym)) + '</h3>' +
+      '<div class="panel pad" style="margin-top:16px"><h2>' + ((p && p.aboutHead) || ("About " + it.sym)) + '</h2>' +
         '<div class="muted">' + ((p && p.aboutName) || it.name) + '</div>' +
         '<p>' + (p ? p.about : '<b>' + it.sym + '</b> ' + (about[it.cat] || "")) + '</p>' +
         '<div class="about-cols">' +
@@ -351,7 +351,7 @@
       '</div>' +
 
       (variants && variants.length ?
-        '<div class="panel pad" style="margin-top:16px"><h3>' + ((p && p.symbolsHead) || "Available Symbols") + '</h3>' +
+        '<div class="panel pad" style="margin-top:16px"><h2>' + ((p && p.symbolsHead) || "Available Symbols") + '</h2>' +
           '<div class="muted">' + (p ? p.symbolsIntro :
             "The same instrument is offered on " + variants.length + " account type" + (variants.length > 1 ? "s" : "") +
             " / data feed" + (variants.length > 1 ? "s" : "") + ". Symbol suffixes vary by platform and account.") + '</div>' +
@@ -362,7 +362,7 @@
       /* long-form PL section from the content workbook (empty for other pages / EN) */
       (window.InstrumentAdditionalContent ? window.InstrumentAdditionalContent.html(it.id) : "") +
 
-      '<div class="related"><h3>' + ((p && p.relatedHead) || ("Related in " + catLabel(it.cat))) + '</h3>' +
+      '<div class="related"><h2>' + ((p && p.relatedHead) || ("Related in " + catLabel(it.cat))) + '</h2>' +
         relatedTable(window.INSTRUMENTS.filter(function (x) { return x.cat === it.cat && x.id !== it.id; }).slice(0, 4)) +
         '<a href="' + home + '" class="btn btn-outline back-btn">' +
           /* the workbook's own back label already carries its arrow */

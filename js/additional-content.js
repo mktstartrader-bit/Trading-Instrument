@@ -2,7 +2,7 @@
    STARTRADER — InstrumentAdditionalContent
    Renders the long-form Polish section that sits below an instrument
    page's existing panels. Content is data-only, keyed by page id, in
-   js/content-pl-additional.js (generated from the approved workbook by
+   js/pl-additional/<page>.js (generated from the approved workbook by
    tools/build-pl-additional.py) — this file holds no copy.
 
    Block types (workbook Column E -> HTML):

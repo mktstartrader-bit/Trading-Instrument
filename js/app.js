@@ -89,7 +89,6 @@
         '</td>' +
         '<td><span class="px tnum" data-base="' + bid + '" data-dp="' + it.dp + '" data-cur="' + it.cur + '">' + (it.cur ? '<span class="cur">' + it.cur + '</span>' : '') + fmt(bid, it.dp) + '</span></td>' +
         '<td><span class="px tnum" data-base="' + ask + '" data-dp="' + it.dp + '" data-cur="' + it.cur + '">' + (it.cur ? '<span class="cur">' + it.cur + '</span>' : '') + fmt(ask, it.dp) + '</span></td>' +
-        '<td class="spread tnum"><b>' + it.spread + '</b></td>' +
         '<td><span class="chg ' + (up ? "up" : "down") + ' tnum">' + arrow(up) + (up ? "+" : "") + it.chg.toFixed(2) + '%</span></td>' +
         '<td><span class="spark"><svg viewBox="0 0 116 34" preserveAspectRatio="none"><path class="ln" d="' + d + '" stroke="' + lineCol + '"/></svg></span></td>' +
         '<td><a class="trade" href="' + url + '">' + col(6, "Trade") + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></td>' +
@@ -122,7 +121,7 @@
     document.getElementById("resultCount").textContent = window.INSTRUMENTS.length;
 
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="big">🔍</div>No instruments match “' + state.q + '”.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="big">🔍</div>No instruments match “' + state.q + '”.</div></td></tr>';
       wrap.innerHTML = ""; return;
     }
 
@@ -211,7 +210,9 @@
 
     var head = document.getElementById("thead-row");
     if (head && UI.columns) {
-      head.querySelectorAll("th").forEach(function (th, i) { if (UI.columns[i]) th.textContent = UI.columns[i]; });
+      /* the workbook still lists a Spread column (index 3); spread data is not published, so skip it */
+      var cols = UI.columns.filter(function (c, i) { return i !== 3; });
+      head.querySelectorAll("th").forEach(function (th, i) { if (cols[i]) th.textContent = cols[i]; });
     }
   }
 
@@ -221,6 +222,7 @@
     renderFilters();
     renderTicker();
     renderTable();
+    document.documentElement.classList.remove("i18n-wait");
     animateCount(document.getElementById("mInstruments"), window.INSTRUMENTS.length);
     animateCount(document.getElementById("mClasses"), window.CATEGORIES.length - 1);
 

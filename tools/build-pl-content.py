@@ -271,7 +271,7 @@ def main():
             "back": v["back"],
         }
 
-    body = json.dumps(out, ensure_ascii=False, indent=2, sort_keys=False)
+    body = json.dumps(out, ensure_ascii=False, separators=(",", ":"), sort_keys=False)
     header = (
         "/* ============================================================\n"
         "   AUTO-GENERATED — do not edit by hand.\n"

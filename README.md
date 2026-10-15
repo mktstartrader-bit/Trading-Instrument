@@ -8,7 +8,8 @@ plain HTML/CSS/JS (no framework, no build step).
 - **Instrument explorer table** — the 55 instruments of the approved page list
   (Forex 10 · Commodities 10 · Indices 10 · Metals 5 · Shares 10 · ETFs 10), one row
   per page, with each instrument's account/feed variants surfaced on its detail page.
-  Columns: Instrument · Sell · Buy · Spread · Change · 7-Day Trend · Trade.
+  Columns: Instrument · Sell · Buy · Change · 7-Day Trend · Trade. **Spread figures are
+  not published** anywhere on the site (the workbook's Spread column label is skipped).
 - **English / Polish language switch** in the navbar — see [Languages](#languages).
 - **Live search and category filters** — a curated cross-asset **Most Traded** top-10
   default plus one tab per class. Searching widens to the full universe from any tab;
@@ -60,6 +61,19 @@ Leverage, Margin, Trading Hours (GMT), Day Range, 52-Week Range, Change %* and t
 related-table *Price* header. Add them to the workbook and re-run the generator to
 localise them.
 
+## Performance
+
+- Scripts are injected by a small inline loader in each page's `<head>`: they download
+  in parallel, don't block rendering, and still run in order.
+- **English never downloads Polish copy.** In PL, `js/content-pl.js` loads, and an
+  instrument page loads only its own long-form file `js/pl-additional/<id>.js`
+  (`PL_PAGES` in `instrument.html` lists which exist; the generator keeps it in sync).
+- Plus Jakarta Sans is self-hosted (`assets/fonts/`, latin + latin-ext for Polish),
+  with the latin file and the logo preloaded.
+- The navbar height, ticker, filter row and empty detail page reserve their space, so
+  JS-rendered content causes no layout shift. On PL the English hero copy stays hidden
+  until the Polish text is applied.
+
 ## Run locally
 
 ```bash
@@ -75,11 +89,14 @@ instrument.html             # instrument detail page
 css/styles.css              # design system
 js/data.js                  # CATALOGUE (55 symbols) -> builds instruments + categories
 js/content-pl.js            # GENERATED — Polish copy, verbatim from the workbook
+js/pl-additional/<id>.js    # GENERATED — long-form PL section, one file per page
+js/additional-content.js    # renders the long-form PL section
 js/i18n.js                  # EN/PL selection, language button, metadata
 js/app.js                   # table rendering, search, filters, live prices
 js/detail.js                # detail page rendering
 js/chrome.js                # shared navbar + footer
 js/symbol_all.js            # full raw symbol universe (reference only, not loaded)
 tools/build-pl-content.py   # workbook -> js/content-pl.js
-assets/                     # logo (light + white variants)
+tools/build-pl-additional.py # workbook -> js/pl-additional/*.js (+ PL_PAGES in instrument.html)
+assets/                     # logo, favicons, self-hosted fonts
 ```

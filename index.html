@@ -12,13 +12,38 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" />
   <meta name="theme-color" content="#0D0D4B" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Scripts load in parallel without blocking render and still run in order.
+       English never downloads the Polish copy; PL loads it (and, on instrument pages,
+       only that instrument's long-form section). -->
+  <script>
+    (function () {
+      /* same selection order as js/i18n.js: ?lang= → localStorage → "en" */
+      var q = new URLSearchParams(location.search), ok = /^(en|pl)$/, lang = (q.get("lang") || "").toLowerCase();
+      if (!ok.test(lang)) { try { lang = (localStorage.getItem("startrader_lang") || "").toLowerCase(); } catch (e) { lang = ""; } }
+      var files = ["i18n", "data", "chrome", "app"];
+      if (lang === "pl") {
+        files.unshift("content-pl");
+        /* the static hero copy is English: keep it hidden until app.js swaps in the
+           Polish text, so the longer heading can't shift the page (3s safety net) */
+        var root = document.documentElement;
+        root.classList.add("i18n-wait");
+        setTimeout(function () { root.classList.remove("i18n-wait"); }, 3000);
+      }
+      files.forEach(function (f) {
+        var s = document.createElement("script");
+        s.src = "js/" + f + ".js";
+        s.async = false;
+        document.head.appendChild(s);
+      });
+    })();
+  </script>
+
+  <link rel="preload" href="assets/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/logo.svg" as="image" fetchpriority="high" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <header id="site-nav"></header>
+  <header id="site-nav" class="nav"></header>
 
   <!-- HERO -->
   <section class="hero">
@@ -66,7 +91,6 @@
                 <th class="left">Instrument</th>
                 <th>Sell</th>
                 <th>Buy</th>
-                <th>Spread</th>
                 <th>Change</th>
                 <th>7-Day Trend</th>
                 <th>Trade</th>
@@ -82,10 +106,5 @@
 
   <footer id="site-footer"></footer>
 
-  <script src="js/content-pl.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/chrome.js"></script>
-  <script src="js/app.js"></script>
 </body>
 </html>
