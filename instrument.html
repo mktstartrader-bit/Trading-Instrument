@@ -20,7 +20,7 @@
       /* same selection order as js/i18n.js: ?lang= → localStorage → "en" */
       var q = new URLSearchParams(location.search), ok = /^(en|pl)$/, lang = (q.get("lang") || "").toLowerCase();
       if (!ok.test(lang)) { try { lang = (localStorage.getItem("startrader_lang") || "").toLowerCase(); } catch (e) { lang = ""; } }
-      var files = ["i18n", "data", "additional-content", "chrome", "detail"];
+      var files = ["i18n", "data", "additional-content", "tv", "chrome", "detail"];
       /* pages with a long-form PL section — rewritten by tools/build-pl-additional.py */
       var PL_PAGES = " arkb bitb bito btco cl-oil dj30 dram dxyz eurusd ewj ewy gbpjpy gbpusd ger40 hdb mara mstr nas100 nio nvidia spce tqqq tsla ukousd ung usdcad usousd xagusd xauaud xauusd ";
       var sym = (q.get("symbol") || "").toLowerCase();
