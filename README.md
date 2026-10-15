@@ -74,6 +74,14 @@ localise them.
   JS-rendered content causes no layout shift. On PL the English hero copy stays hidden
   until the Polish text is applied.
 
+## Static Polish pages
+
+`python3 tools/build-pl-static.py` writes `dist-pl/pl/trading-instruments/`: one
+always-Polish HTML file per Page Index entry (home + 55 instruments), at the
+workbook's production URLs, with PL title/description/canonical/hreflang in the HTML.
+`window.PL_STATIC` on those pages tells `js/i18n.js` to map internal links to the
+static URLs. The EN button goes to the same path without `/pl`.
+
 ## Run locally
 
 ```bash
@@ -98,5 +106,6 @@ js/chrome.js                # shared navbar + footer
 js/symbol_all.js            # full raw symbol universe (reference only, not loaded)
 tools/build-pl-content.py   # workbook -> js/content-pl.js
 tools/build-pl-additional.py # workbook -> js/pl-additional/*.js (+ PL_PAGES in instrument.html)
+tools/build-pl-static.py    # static PL site: 56 pages under dist-pl/pl/trading-instruments/
 assets/                     # logo, favicons, self-hosted fonts
 ```

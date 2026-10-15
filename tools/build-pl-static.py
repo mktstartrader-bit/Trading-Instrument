@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+"""
+Build the static Polish site: one HTML file per page of the workbook's Page Index
+(home + every instrument = 56 pages), laid out like the production URLs
+
+    dist-pl/pl/trading-instruments/index.html                 <- "home"
+    dist-pl/pl/trading-instruments/<category>/<id>/index.html <- each instrument
+
+Each page is always Polish and ships its PL <title>, meta description, canonical
+and hreflang in the HTML. It loads only the scripts it needs (an instrument page
+also gets its own js/pl-additional/<id>.js when one exists). Shared css/js/assets
+are copied once into dist-pl/pl/trading-instruments/.
+
+Run after the content generators:
+    python3 tools/build-pl-static.py [--out dist-pl] [--origin https://startrader.com]
+"""
+import argparse
+import html
+import json
+import os
+import re
+import shutil
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, ".."))
+SECTION = "pl/trading-instruments"
+
+# scripts each template needs, in execution order (see the loader in index.html / instrument.html)
+HOME_JS = ["content-pl", "i18n", "data", "chrome", "app"]
+DETAIL_JS = ["content-pl", "i18n", "data", "@additional", "additional-content", "chrome", "detail"]
+
+
+def read(path):
+    with open(os.path.join(ROOT, path), encoding="utf-8") as f:
+        return f.read()
+
+
+def load_content():
+    src = read("js/content-pl.js")
+    body = src[src.index("window.PL_CONTENT =") + len("window.PL_CONTENT ="):].strip().rstrip(";")
+    return json.loads(body)
+
+
+def sub1(pattern, repl, s, flags=0):
+    out, n = re.subn(pattern, lambda m: repl, s, count=1, flags=flags)
+    if n != 1:
+        raise SystemExit("template pattern not found: %s" % pattern)
+    return out
+
+
+def esc(s):
+    return html.escape(s, quote=True)
+
+
+def head_and_scripts(tpl, meta, origin, root, static_cfg, scripts):
+    url = origin + "/" + meta["url"].split("/", 1)[1]
+    en = url.replace("/pl/", "/", 1)
+    s = tpl
+    s = sub1(r'<html lang="en">', '<html lang="pl" data-lang="pl">', s)
+    s = sub1(r"<title>.*?</title>", "<title>%s</title>" % esc(meta["title"]), s)
+    s = sub1(r'<meta name="description" content="[^"]*" />',
+             '<meta name="description" content="%s" />\n'
+             '  <link rel="canonical" href="%s" />\n'
+             '  <link rel="alternate" hreflang="pl" href="%s" />\n'
+             '  <link rel="alternate" hreflang="en" href="%s" />' % (esc(meta["description"]), url, url, en), s)
+    # the runtime loader is replaced by plain deferred scripts: the language is fixed at build time
+    tags = "\n".join('  <script defer src="%sjs/%s.js"></script>' % (root, f) for f in scripts)
+    cfg = dict(static_cfg, en=en)
+    s = sub1(r"  <!-- Scripts load in parallel.*?</script>\n",
+             "  <script>window.PL_STATIC = %s;</script>\n%s\n" % (json.dumps(cfg), tags), s, re.S)
+    for a in ("assets/", "css/"):
+        s = s.replace('href="%s' % a, 'href="%s%s' % (root, a))
+    return s
+
+
+def build_home(tpl, C, origin):
+    ui = C["ui"]["pl"]
+    s = head_and_scripts(tpl, C["meta"]["home"], origin, "", {"root": ""}, HOME_JS)
+
+    # bake the copy app.js would apply, so the page paints in Polish straight away
+    def set_inner(el_id, inner):
+        nonlocal s
+        pat = re.compile(r'(<(\w+)[^>]*\bid="%s"[^>]*>)(.*?)(</\2>)' % re.escape(el_id), re.S)
+        m = pat.search(s)
+        if not m:
+            raise SystemExit("index.html: #%s not found" % el_id)
+        s = s[:m.start()] + m.group(1) + inner + m.group(4) + s[m.end():]
+
+    if ui.get("heroTitleLead"):
+        acc = ui.get("heroTitleAccent")
+        set_inner("heroTitle", ui["heroTitleLead"] + (' - <span class="accent">' + acc + "</span>" if acc else ""))
+    if ui.get("heroSub"):
+        set_inner("heroSub", ui["heroSub"])
+    meta3 = ui.get("heroMeta") or []
+    if len(meta3) == 3:
+        set_inner("mInstrumentsLabel", meta3[0])
+        set_inner("mClassesLabel", meta3[1])
+        at = meta3[2].find("<")
+        set_inner("mExec", esc(meta3[2][:at]) + "<b>" + esc(meta3[2][at:]) + "</b>" if at > -1 else esc(meta3[2]))
+    if ui.get("explorerTitle"):
+        set_inner("explorerTitle", ui["explorerTitle"])
+    if ui.get("explorerSub"):
+        set_inner("explorerSub", " " + ui["explorerSub"])
+    if ui.get("searchPlaceholder"):
+        s = re.sub(r'(<input id="search"[^>]*?placeholder=")[^"]*', lambda m: m.group(1) + esc(ui["searchPlaceholder"]), s, count=1)
+    cols = [c for i, c in enumerate(ui.get("columns") or []) if i != 3]  # Spread is not published
+    if cols:
+        ths = iter(cols)
+        s = re.sub(r'(<tr id="thead-row">)(.*?)(</tr>)',
+                   lambda m: m.group(1) + re.sub(r"(<th[^>]*>)[^<]*(</th>)", lambda t: t.group(1) + esc(next(ths, "")) + t.group(2), m.group(2)) + m.group(3),
+                   s, count=1, flags=re.S)
+    return s
+
+
+def build_detail(tpl, C, pid, origin, have_additional):
+    scripts = [("pl-additional/" + pid if pid in have_additional else None) if f == "@additional" else f for f in DETAIL_JS]
+    scripts = [f for f in scripts if f]
+    return head_and_scripts(tpl, C["meta"][pid], origin, "../../", {"root": "../../", "id": pid}, scripts)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=os.path.join(ROOT, "dist-pl"))
+    ap.add_argument("--origin", default="https://startrader.com")
+    a = ap.parse_args()
+
+    C = load_content()
+    out = os.path.join(os.path.abspath(a.out), SECTION)
+    if os.path.isdir(os.path.abspath(a.out)):
+        shutil.rmtree(os.path.abspath(a.out))
+    os.makedirs(out)
+
+    # shared files (the full-symbol reference list is not used by any page)
+    for d in ("css", "assets"):
+        shutil.copytree(os.path.join(ROOT, d), os.path.join(out, d))
+    os.makedirs(os.path.join(out, "js", "pl-additional"))
+    for f in HOME_JS + DETAIL_JS:
+        if not f.startswith("@"):
+            shutil.copy(os.path.join(ROOT, "js", f + ".js"), os.path.join(out, "js", f + ".js"))
+    add_dir = os.path.join(ROOT, "js", "pl-additional")
+    have_additional = {n[:-3] for n in os.listdir(add_dir) if n.endswith(".js")}
+    for n in sorted(have_additional):
+        shutil.copy(os.path.join(add_dir, n + ".js"), os.path.join(out, "js", "pl-additional", n + ".js"))
+
+    pages = []
+    with open(os.path.join(out, "index.html"), "w", encoding="utf-8") as f:
+        f.write(build_home(read("index.html"), C, a.origin))
+    pages.append(("home", "index.html"))
+
+    detail_tpl = read("instrument.html")
+    for pid, meta in C["meta"].items():
+        if pid == "home":
+            continue
+        rel = meta["url"].split("/trading-instruments/", 1)[1].strip("/")
+        if rel.count("/") != 1:
+            raise SystemExit("%s: unexpected page url %s" % (pid, meta["url"]))
+        os.makedirs(os.path.join(out, rel), exist_ok=True)
+        with open(os.path.join(out, rel, "index.html"), "w", encoding="utf-8") as f:
+            f.write(build_detail(detail_tpl, C, pid, a.origin, have_additional))
+        pages.append((pid, rel + "/index.html"))
+
+    with open(os.path.join(out, "pages.csv"), "w", encoding="utf-8") as f:
+        f.write("id,file,url,title\n")
+        for pid, rel in pages:
+            m = C["meta"][pid]
+            f.write('%s,%s,%s/%s,"%s"\n' % (pid, rel, a.origin, m["url"].split("/", 1)[1], m["title"].replace('"', '""')))
+
+    print("wrote %d pages to %s" % (len(pages), out))
+
+
+if __name__ == "__main__":
+    main()

@@ -5,7 +5,8 @@
 (function () {
   "use strict";
 
-  var LOGO = '<img class="logo-img" src="assets/logo.svg" alt="STARTRADER" width="152" height="30" />';
+  var asset = function (p) { return window.I18N && window.I18N.asset ? window.I18N.asset(p) : p; };
+  var LOGO = '<img class="logo-img" src="' + asset("assets/logo.svg") + '" alt="STARTRADER" width="152" height="30" />';
 
   var caret = '<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>';
 
@@ -66,7 +67,7 @@
     '<div class="wrap">' +
       '<div class="footer-top">' +
         '<div class="footer-brand">' +
-          '<img class="logo-img foot" src="assets/logo-white.svg" alt="STARTRADER" width="168" height="33" />' +
+          '<img class="logo-img foot" src="' + asset("assets/logo-white.svg") + '" alt="STARTRADER" width="168" height="33" />' +
           '<p>A globally trusted multi-asset broker offering deep liquidity, tight spreads and fast execution across 600+ instruments.</p>' +
           '<div class="socials">' +
             social("Facebook", S.fb) + social("Instagram", S.ig) + social("LinkedIn", S.li) +

@@ -396,7 +396,7 @@
   }
 
   function init() {
-    var id = qs("symbol");
+    var id = (window.PL_STATIC && window.PL_STATIC.id) || qs("symbol");
     var it = window.INSTRUMENTS.find(function (x) { return x.id === id; });
     if (!it) return notFound(id);
     render(it);

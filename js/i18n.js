@@ -27,22 +27,39 @@
     try { localStorage.setItem(KEY, v); } catch (e) {}
   }
 
+  /* static PL build (tools/build-pl-static.py): one HTML file per page under
+     /pl/trading-instruments/, always Polish. window.PL_STATIC = { root, id, en } */
+  var STATIC = window.PL_STATIC || null;
+
   var fromUrl = normalize(new URLSearchParams(location.search).get("lang"));
-  var lang = fromUrl || stored() || "en";
-  if (fromUrl) persist(fromUrl);
+  var lang = STATIC ? "pl" : fromUrl || stored() || "en";
+  if (fromUrl && !STATIC) persist(fromUrl);
 
   var C = window.PL_CONTENT || { ui: { en: {}, pl: {} }, instruments: {}, meta: {} };
   var isPL = lang === "pl";
 
+  /* static build: page URLs come from the workbook's Page Index ("url" column) */
+  function staticHref(url) {
+    var m = /^instrument\.html\?symbol=([^&]+)/.exec(url), meta = m && C.meta && C.meta[m[1]];
+    if (url === "index.html") return STATIC.root || "./";
+    if (meta && meta.url) return STATIC.root + meta.url.replace(/^.*?\/trading-instruments\//, "");
+    return url;
+  }
+
   /* keep the choice on every internal link so a shared URL keeps its language */
   function href(url) {
+    if (STATIC) return staticHref(url);
     if (!isPL) return url;
     return url + (url.indexOf("?") > -1 ? "&" : "?") + "lang=pl";
   }
 
+  /* site-relative asset path that also works from nested static pages */
+  function asset(path) { return (STATIC ? STATIC.root : "") + path; }
+
   function set(next) {
     next = normalize(next);
     if (!next || next === lang) return;
+    if (STATIC) { if (STATIC.en) location.href = STATIC.en; return; }
     persist(next);
     var url = new URL(location.href);
     if (next === "en") url.searchParams.delete("lang");
@@ -93,6 +110,7 @@
       return i > -1 && chips[i] ? chips[i] : null;
     },
     href: href,
+    asset: asset,
     set: set,
     buttonHTML: buttonHTML,
     bindButton: bindButton,
