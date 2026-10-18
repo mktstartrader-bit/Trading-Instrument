@@ -422,7 +422,7 @@ tr:hover .trade { background: var(--blue); color: #fff; border-color: var(--blue
 /* ============================================================ RESPONSIVE */
 /* ---------- TradingView widgets (js/tv.js) ----------
    each container reserves the widget's height so nothing shifts when it loads */
-.tv-ticker { height: 46px; }
+.tv-ticker { height: 58px; } /* TradingView ticker tape, displayMode "regular": one line, 58px */
 .tv-market { height: 560px; }
 .market-wrap { padding: 8px 10px; overflow: hidden; }
 .tv-chart { height: 440px; margin-top: 18px; border-radius: 14px; overflow: hidden; }
