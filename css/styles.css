@@ -230,6 +230,21 @@ body::before {
 /* toolbar */
 
 /* filters */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.chip {
+  font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--muted); cursor: pointer;
+  background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-brd); border-radius: 100px;
+  padding: 9px 15px; display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6);
+  transition: color .2s, border-color .2s, background .2s, transform .2s var(--ease), box-shadow .2s;
+}
+.chip .ico { font-size: 14px; }
+.chip .cnt { font-size: 11.5px; font-weight: 700; color: var(--faint); }
+.chip:hover { color: var(--ink); background: var(--glass-hover); transform: translateY(-1px); }
+.chip.active { color: #fff; background: linear-gradient(135deg, var(--blue), var(--deep)); border-color: transparent; box-shadow: 0 10px 24px -12px rgba(0, 71, 187, .6); }
+.chip.active .cnt { color: rgba(255, 255, 255, .65); }
+.chip:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
 /* ============================================================ TABLE */
 .table-wrap {
@@ -309,6 +324,9 @@ tr:hover .trade { background: var(--blue); color: #fff; border-color: var(--blue
 
 /* reveal */
 .reveal { opacity: 0; transform: translateY(18px); animation: rise .8s var(--ease) forwards; }
+/* pre-rendered pages (tools/prerender-pl.js) arrive fully drawn: no entry animation,
+   so content is visible at first paint and the script's redraw is invisible */
+html.pre .reveal, html.pre table.instruments tbody tr { opacity: 1; transform: none; animation: none; }
 .reveal.d1 { animation-delay: .05s; } .reveal.d2 { animation-delay: .13s; } .reveal.d3 { animation-delay: .21s; } .reveal.d4 { animation-delay: .29s; } .reveal.d5 { animation-delay: .37s; }
 @keyframes rise { to { opacity: 1; transform: translateY(0); } }
 
@@ -423,7 +441,7 @@ tr:hover .trade { background: var(--blue); color: #fff; border-color: var(--blue
 /* ---------- TradingView widgets (js/tv.js) ----------
    each container reserves the widget's height so nothing shifts when it loads */
 .tv-ticker { height: 58px; } /* TradingView ticker tape, displayMode "regular": one line, 58px */
-.tv-market { height: 560px; }
+.tv-market { height: 440px; } /* 10 rows; js/app.js sets it per category */
 .market-wrap { padding: 8px 10px; overflow: hidden; }
 .tv-chart { height: 440px; margin-top: 18px; border-radius: 14px; overflow: hidden; }
 .tv-quote { height: 70px; }
@@ -431,13 +449,6 @@ tr:hover .trade { background: var(--blue); color: #fff; border-color: var(--blue
 .tradingview-widget-copyright a { color: var(--blue); }
 
 /* plain links to every instrument page (below the live table) */
-.all-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 22px 28px; margin-top: 30px; }
-.all-links h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
-.all-links ul { list-style: none; display: grid; gap: 7px; }
-.all-links a { font-size: 13.5px; color: var(--navy); text-decoration: none; }
-.all-links a b { font-weight: 700; }
-.all-links a span { color: var(--muted); }
-.all-links a:hover b { color: var(--blue); }
 
 @media (max-width: 1040px) {
   .footer-top { grid-template-columns: repeat(3, 1fr); }
@@ -449,7 +460,6 @@ tr:hover .trade { background: var(--blue); color: #fff; border-color: var(--blue
   .d-hero, .d-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 620px) {
-  .tv-market { height: 520px; }
   .tv-chart { height: 360px; }
   .wrap { padding: 0 18px; }
   .lang-globe { display: none; }
