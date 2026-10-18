@@ -1,9 +1,8 @@
 /* ============================================================
    STARTRADER — Instruments explorer
    Live prices come from TradingView widgets (js/tv.js): a ticker tape in
-   the hero and a Market Data table with one tab per asset class. Below it,
-   a plain list links every instrument page (crawlable, works without the
-   widgets).
+   the hero and a Market Data table. The category chips above the table
+   pick which asset class it lists.
    ============================================================ */
 (function () {
   "use strict";
@@ -40,33 +39,41 @@
     });
   }
 
-  /* ---------- live market table ---------- */
+  /* ---------- category filter + live market table ---------- */
+  var current = "all";
+  function catItems(id) { return (id === "all" ? TOP.map(byId) : inCat(id)).filter(hasTV); }
+
+  function renderFilters() {
+    var el = document.getElementById("filters");
+    if (!el) return;
+    el.innerHTML = window.CATEGORIES.map(function (c) {
+      var on = c.id === current;
+      return '<button type="button" class="chip' + (on ? " active" : "") + '" data-cat="' + c.id + '" aria-pressed="' + on + '">' +
+        '<span class="ico" aria-hidden="true">' + c.ico + '</span>' + esc(catLabel(c.id)) +
+        ' <span class="cnt">' + catItems(c.id).length + '</span></button>';
+    }).join("");
+    el.querySelectorAll(".chip").forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (b.dataset.cat === current) return;
+        current = b.dataset.cat;
+        renderFilters();
+        renderMarket();
+      });
+    });
+  }
+
   function renderMarket() {
     if (!window.TV) return;
-    var groups = [{ name: catLabel("all"), symbols: TOP.map(byId).filter(hasTV).map(tvItem) }];
-    window.CATEGORIES.forEach(function (c) {
-      if (c.id === "all") return;
-      groups.push({ name: catLabel(c.id), symbols: inCat(c.id).filter(hasTV).map(tvItem) });
-    });
+    var items = catItems(current), box = document.getElementById("marketData");
+    var groups = [{ name: catLabel(current), symbols: items.map(tvItem) }];
+    /* the table is as tall as its rows (header + 36px a row), so a short class leaves no gap */
+    if (box) box.style.height = (80 + items.length * 36) + "px";
     window.TV.embed(document.getElementById("marketData"), "market-quotes", {
       width: "100%", height: "100%", symbolsGroups: groups,
       showSymbolLogo: true, isTransparent: true, colorTheme: "light",
       /* a row click opens our instrument page; it receives ?tvwidgetsymbol= */
       largeChartUrl: new URL(link("instrument.html").split("?")[0], location.href).href
     });
-  }
-
-  /* ---------- every instrument page, grouped by class ---------- */
-  function renderLinks() {
-    var el = document.getElementById("allLinks");
-    if (!el) return;
-    el.innerHTML = window.CATEGORIES.filter(function (c) { return c.id !== "all"; }).map(function (c) {
-      return '<div class="al-col"><h3>' + esc(catLabel(c.id)) + '</h3><ul>' + inCat(c.id).map(function (it) {
-        var name = dispName(it), sym = dispSym(it);
-        return '<li><a href="' + link("instrument.html?symbol=" + it.id) + '"><b>' + sym + '</b>' +
-          (name && name !== sym ? ' <span>' + name + '</span>' : '') + '</a></li>';
-      }).join("") + '</ul></div>';
-    }).join("");
   }
 
   /* ---------- hero counters ---------- */
@@ -104,7 +111,7 @@
   /* ---------- init ---------- */
   function init() {
     applyCopy();
-    renderLinks();
+    renderFilters();
     document.getElementById("resultCount").textContent = window.INSTRUMENTS.length;
     document.documentElement.classList.remove("i18n-wait");
     animateCount(document.getElementById("mInstruments"), window.INSTRUMENTS.length);

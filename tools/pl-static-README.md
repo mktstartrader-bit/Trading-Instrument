@@ -18,18 +18,36 @@ pl/trading-instruments/{css,js,assets}               -> shared files (all paths 
   long-form PL article load it from `js/pl-additional/<id>.js`; the other 25 don't
   have one in the workbook yet.
 - **Live market data from TradingView** (Polish-language widgets):
-  - Home: a live ticker in the hero, plus a live Market Data table with all 55
-    instruments in tabs per asset class. Clicking a row opens our instrument page.
+  - Home: a live ticker in the hero, plus a live Market Data table. The category
+    chips above it (Najchętniej handlowane, Forex, Surowce, Indeksy, Metale, Akcje,
+    ETF) choose which asset class it lists. Clicking a row opens our instrument page.
   - Instrument pages: a live TradingView chart and a live quote.
   - The symbol each instrument uses is set in `js/tv.js`. These are TradingView's
     market prices, not STARTRADER's own quotes, and US shares/ETFs may be delayed.
 - **No spread or bid/ask figures** anywhere.
-- Lighthouse (mobile): performance 97–98, CLS ≤ 0.06. The widgets load after the page,
-  so they don't slow the first paint.
+- **Speed (Core Web Vitals):**
+  - Every page ships pre-rendered: header, content and footer are already in the HTML,
+    so the page shows as soon as the HTML and CSS arrive. The scripts then run and
+    redraw the same markup (entry animations are off on these pages, so it's invisible).
+  - Each page loads only its own Polish copy (`js/content-pl/<id>.js`, about 13 KB)
+    instead of all 56 pages' copy (117 KB).
+  - Both font files are preloaded (Polish letters are in the latin-ext file), so text
+    doesn't reflow when the fonts arrive.
+  - The TradingView widgets load after the page, so they don't slow the first paint.
+  - Lighthouse, mobile: performance 98–100, LCP 1.5–2.2 s, Speed Index 0.8–1.0 s,
+    TBT 0 ms, CLS ≤ 0.064. Desktop: 100 on every page tested.
+
+## Rebuilding
+```
+python3 tools/build-pl-static.py --out dist-pl     # writes the 56 pages
+node tools/prerender-pl.js dist-pl                 # pre-renders them (needs puppeteer-core + Chrome)
+```
 
 ## Deploying
 Upload `pl/` to the web root so the folders become the URLs above. Each page links
-to the others with relative paths, so the bundle also works under any other base path.
+to the others with relative paths, so the bundle also works under any other base path,
+and opened straight from disk (links name `index.html` there).
+Serve it with gzip or brotli compression (any CDN does this by default).
 
 ## Points to confirm
 - The **EN** button and the `hreflang="en"` link point to the same path without `/pl`
