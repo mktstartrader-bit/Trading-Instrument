@@ -36,7 +36,7 @@
     if (!window.TV) return;
     window.TV.embed(document.getElementById("ticker"), "ticker-tape", {
       symbols: TOP.map(byId).filter(hasTV).map(function (it) { return { proName: window.TV.symbol(it.id), title: dispSym(it) }; }),
-      showSymbolLogo: true, isTransparent: true, displayMode: "compact", colorTheme: "dark"
+      showSymbolLogo: true, isTransparent: true, displayMode: "regular", colorTheme: "dark"
     });
   }
 
