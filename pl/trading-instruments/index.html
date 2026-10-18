@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pl" data-lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instrumenty CFD - forex, indeksy, akcje i ETF | Startrader</title>
+  <meta name="description" content="Handluj kontraktami CFD na 55 instrumentach z 6 klas aktywów - forex, surowce, indeksy, metale, akcje i ETF. Porównaj spready na żywo w Startrader." />
+  <link rel="canonical" href="https://startrader.com/pl/trading-instruments/" />
+  <link rel="alternate" hreflang="pl" href="https://startrader.com/pl/trading-instruments/" />
+  <link rel="alternate" hreflang="en" href="https://startrader.com/trading-instruments/" />
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="assets/favicon-16.png" type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" />
+  <meta name="theme-color" content="#0D0D4B" />
+
+  <script>window.PL_STATIC = {"root": "", "en": "https://startrader.com/trading-instruments/"};</script>
+  <script defer src="js/content-pl.js"></script>
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/data.js"></script>
+  <script defer src="js/tv.js"></script>
+  <script defer src="js/chrome.js"></script>
+  <script defer src="js/app.js"></script>
+
+  <link rel="preload" href="assets/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/logo.svg" as="image" fetchpriority="high" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="site-nav" class="nav"></header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-banner reveal d1">
+        <div class="hero-banner-inner">
+          <div class="eyebrow"><span class="dot"></span> Live Markets</div>
+          <h1 id="heroTitle">Handluj na światowych rynkach finansowych - <span class="accent">notowania, wykresy i analizy</span></h1>
+          <p id="heroSub">Najchętniej handlowane instrumenty z rynków Forex, Surowców, Indeksów, Metali, Akcji i ETF — porównaj spready na żywo i otwórz dowolny rynek, aby zobaczyć pełne specyfikacje kontraktów i wykresy.</p>
+          <div class="hero-meta">
+            <span><b id="mInstruments">0</b> <span id="mInstrumentsLabel">instrumentów</span></span><span class="sepdot">·</span>
+            <span><b id="mClasses">0</b> <span id="mClassesLabel">klas aktywów</span></span><span class="sepdot">·</span>
+            <span id="mExec">Egzekucja <b>&lt; 30 ms</b></span>
+          </div>
+          <div class="ticker"><div class="tv-ticker" id="ticker"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPLORER -->
+  <section class="section">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="explorerTitle">Eksplorator instrumentów</h2>
+          <p><span id="resultCount">0</span><span id="explorerSub"> instrumentów · wybierz dowolny wiersz, aby zobaczyć szczegóły</span></p>
+        </div>
+      </div>
+
+      <!-- live prices: TradingView Market Data widget (js/tv.js, js/app.js) -->
+      <div class="market-wrap panel"><div class="tv-market" id="marketData"></div></div>
+
+      <nav class="all-links" id="allLinks" aria-label="Instruments"></nav>
+    </div>
+  </section>
+
+  <footer id="site-footer"></footer>
+
+</body>
+</html>
