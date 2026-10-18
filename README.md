@@ -5,33 +5,32 @@ plain HTML/CSS/JS (no framework, no build step).
 
 ## Features
 
-- **Instrument explorer table** — the 55 instruments of the approved page list
-  (Forex 10 · Commodities 10 · Indices 10 · Metals 5 · Shares 10 · ETFs 10), one row
-  per page, with each instrument's account/feed variants surfaced on its detail page.
-  Columns: Instrument · Sell · Buy · Change · 7-Day Trend · Trade. **Spread figures are
-  not published** anywhere on the site (the workbook's Spread column label is skipped).
+- **Live prices from TradingView** (`js/tv.js`) — a ticker tape in the hero and a
+  TradingView *Market Data* table with one tab per asset class (Most Traded, Forex,
+  Commodities, Indices, Metals, Shares, ETFs) covering all 55 instruments. A row click
+  opens our instrument page. Below it, a plain link list reaches every instrument page.
+  **Spread / bid-ask is never shown.**
 - **English / Polish language switch** in the navbar — see [Languages](#languages).
-- **Live search and category filters** — a curated cross-asset **Most Traded** top-10
-  default plus one tab per class. Searching widens to the full universe from any tab;
-  categories paginate 10 rows at a time.
-- **Detail page** for every instrument (`instrument.html?symbol=<id>`) with a
-  **candlestick / line chart switch** (OHLC candles, dated x-axis, price axis, hover
-  tooltip), live Buy/Sell quote, a blue-gradient key-info banner (Symbol · Leverage ·
-  Margin · Trading Hours), available symbol variants and related markets.
+- **Detail page** for every instrument (`instrument.html?symbol=<id>`) with a live
+  TradingView Advanced Chart and live quote, a blue-gradient key-info banner (Symbol ·
+  Leverage · Margin · Trading Hours), available symbol variants and related markets.
 - **Glassmorphic light UI** on a blue ambient background, a blue-gradient hero banner,
   real STARTRADER navbar + footer, and the official logo.
 - Brand system: STARTRADER navy `#0D0D4B` / blue `#0047BB`, **Plus Jakarta Sans**.
 
 ## Data
 
-`js/data.js` holds `CATALOGUE` — the 55 symbols of the approved page list, one per
-category — and transforms them into clean instruments with asset-appropriate demo
-pricing (FX shown as true cross-rates). Every symbol is offered on three account
-types / data feeds (`X.c`, `X+`, `X`), listed on its detail page. `MOST_TRADED_TOP`
-is the curated cross-asset "Most Traded" ranking shown on the default tab.
-Prices/changes are seeded placeholders — swap the pricing block in `js/data.js` for a
-live market feed. (`js/symbol_all.js` retains the full raw symbol universe for
-reference but is no longer loaded by the pages.)
+`js/data.js` holds `CATALOGUE`: the 55 symbols of the approved page list, one per
+category. Every symbol is offered on three account types / data feeds (`X.c`, `X+`,
+`X`), listed on its detail page. `MOST_TRADED_TOP` is the curated cross-asset "Most
+Traded" ranking. (`js/data.js` still generates placeholder prices, but nothing displays them.)
+
+**Prices come from TradingView.** `js/tv.js` maps each catalogue id to the TradingView
+symbol whose live price it shows (e.g. `xauusd → OANDA:XAUUSD`, `nikkei225 → INDEX:NKY`).
+Each mapping was checked to render live data in the free widgets. These are
+TradingView's market prices, not STARTRADER's own quotes, and US shares/ETFs may be
+delayed. TradingView has no website price API, so widgets are the only option; they
+load after the page and carry TradingView's attribution.
 
 **`CATALOGUE` symbols must stay in sync with `js/content-pl.js`** — its keys are
 `slug(symbol)`, so renaming or adding a symbol without a matching workbook sheet
@@ -100,7 +99,8 @@ js/content-pl.js            # GENERATED — Polish copy, verbatim from the workb
 js/pl-additional/<id>.js    # GENERATED — long-form PL section, one file per page
 js/additional-content.js    # renders the long-form PL section
 js/i18n.js                  # EN/PL selection, language button, metadata
-js/app.js                   # table rendering, search, filters, live prices
+js/tv.js                    # TradingView symbol map + lazy widget embedding
+js/app.js                   # explorer: TradingView ticker + Market Data table, link list
 js/detail.js                # detail page rendering
 js/chrome.js                # shared navbar + footer
 js/symbol_all.js            # full raw symbol universe (reference only, not loaded)

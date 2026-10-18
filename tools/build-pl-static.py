@@ -26,8 +26,8 @@ ROOT = os.path.abspath(os.path.join(HERE, ".."))
 SECTION = "pl/trading-instruments"
 
 # scripts each template needs, in execution order (see the loader in index.html / instrument.html)
-HOME_JS = ["content-pl", "i18n", "data", "chrome", "app"]
-DETAIL_JS = ["content-pl", "i18n", "data", "@additional", "additional-content", "chrome", "detail"]
+HOME_JS = ["content-pl", "i18n", "data", "tv", "chrome", "app"]
+DETAIL_JS = ["content-pl", "i18n", "data", "@additional", "additional-content", "tv", "chrome", "detail"]
 
 
 def read(path):
@@ -101,14 +101,6 @@ def build_home(tpl, C, origin):
         set_inner("explorerTitle", ui["explorerTitle"])
     if ui.get("explorerSub"):
         set_inner("explorerSub", " " + ui["explorerSub"])
-    if ui.get("searchPlaceholder"):
-        s = re.sub(r'(<input id="search"[^>]*?placeholder=")[^"]*', lambda m: m.group(1) + esc(ui["searchPlaceholder"]), s, count=1)
-    cols = [c for i, c in enumerate(ui.get("columns") or []) if i != 3]  # Spread is not published
-    if cols:
-        ths = iter(cols)
-        s = re.sub(r'(<tr id="thead-row">)(.*?)(</tr>)',
-                   lambda m: m.group(1) + re.sub(r"(<th[^>]*>)[^<]*(</th>)", lambda t: t.group(1) + esc(next(ths, "")) + t.group(2), m.group(2)) + m.group(3),
-                   s, count=1, flags=re.S)
     return s
 
 
@@ -159,12 +151,29 @@ def main():
             f.write(build_detail(detail_tpl, C, pid, a.origin, have_additional))
         pages.append((pid, rel + "/index.html"))
 
+    # TradingView Market Data rows open <root>/instrument.html?tvwidgetsymbol=EXCHANGE:SYMBOL;
+    # this page forwards to the matching static instrument page
+    tv = dict(re.findall(r'"?([a-z0-9-]+)"?:\s*"([A-Z_]+:[A-Z0-9_!.]+)"', read("js/tv.js")))
+    targets = {}
+    for pid, sym in tv.items():
+        if pid in C["meta"]:
+            targets.setdefault(sym, C["meta"][pid]["url"].split("/trading-instruments/", 1)[1])
+    with open(os.path.join(out, "instrument.html"), "w", encoding="utf-8") as f:
+        f.write("""<!DOCTYPE html>
+<html lang="pl"><head><meta charset="UTF-8" /><meta name="robots" content="noindex" /><title>STARTRADER</title>
+<script>
+  var T = %s, s = (new URLSearchParams(location.search).get("tvwidgetsymbol") || "").toUpperCase();
+  location.replace(T[s] || "./");
+</script></head><body></body></html>
+""" % json.dumps(targets, ensure_ascii=False))
+
     with open(os.path.join(out, "pages.csv"), "w", encoding="utf-8") as f:
         f.write("id,file,url,title\n")
         for pid, rel in pages:
             m = C["meta"][pid]
             f.write('%s,%s,%s/%s,"%s"\n' % (pid, rel, a.origin, m["url"].split("/", 1)[1], m["title"].replace('"', '""')))
 
+    shutil.copy(os.path.join(HERE, "pl-static-README.md"), os.path.join(os.path.abspath(a.out), "README.md"))
     print("wrote %d pages to %s" % (len(pages), out))
 
 

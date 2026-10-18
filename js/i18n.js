@@ -39,10 +39,15 @@
   var isPL = lang === "pl";
 
   /* static build: page URLs come from the workbook's Page Index ("url" column) */
+  /* folder URLs ("forex/eurusd/") need a server to resolve to index.html; opened straight
+     from disk (file://) the browser shows the folder instead, so name the file there */
+  var FILE = location.protocol === "file:";
+  function dirHref(u) { return FILE ? u.replace(/^\.\/$/, "") + "index.html" : u; }
+
   function staticHref(url) {
     var m = /^instrument\.html\?symbol=([^&]+)/.exec(url), meta = m && C.meta && C.meta[m[1]];
-    if (url === "index.html") return STATIC.root || "./";
-    if (meta && meta.url) return STATIC.root + meta.url.replace(/^.*?\/trading-instruments\//, "");
+    if (url === "index.html") return dirHref(STATIC.root || "./");
+    if (meta && meta.url) return dirHref(STATIC.root + meta.url.replace(/^.*?\/trading-instruments\//, ""));
     return url;
   }
 
