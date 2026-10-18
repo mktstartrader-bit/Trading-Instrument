@@ -463,6 +463,16 @@ tr:hover .trade { background: var(--blue); color: #fff; border-color: var(--blue
   .ia h2:not(.ia-title) { font-size: 17px; margin-top: 24px; }
   .panel.pad.ia p, .ia-list li { font-size: 14px; }
 }
+/* phones: the header row (logo, EN/PL, CTA, menu) must fit inside the screen */
+@media (max-width: 480px) {
+  .brand .logo-img { height: 24px; }
+  .nav-right { gap: 6px; }
+  .nav-right .btn-primary { padding: 9px 12px; font-size: 13px; white-space: nowrap; }
+  .hamburger { width: 40px; height: 40px; flex: none; }
+}
+@media (max-width: 420px) {
+  .nav-right .btn-primary { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   table.instruments tbody tr { opacity: 1; transform: none; }
