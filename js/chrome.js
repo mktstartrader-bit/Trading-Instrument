@@ -68,7 +68,7 @@
       '<div class="footer-top">' +
         '<div class="footer-brand">' +
           '<img class="logo-img foot" src="' + asset("assets/logo-white.svg") + '" alt="STARTRADER" width="168" height="33" />' +
-          '<p>A globally trusted multi-asset broker offering deep liquidity, tight spreads and fast execution across 600+ instruments.</p>' +
+          '<p>A globally trusted multi-asset broker offering deep liquidity and fast execution across 600+ instruments.</p>' +
           '<div class="socials">' +
             social("Facebook", S.fb) + social("Instagram", S.ig) + social("LinkedIn", S.li) +
             social("X", S.x) + social("YouTube", S.yt) + social("TikTok", S.tk) + social("Spotify", S.sp) +
