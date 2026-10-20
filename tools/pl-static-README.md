@@ -24,7 +24,8 @@ pl/trading-instruments/{css,js,assets}               -> shared files (all paths 
   - Instrument pages: a live TradingView chart and a live quote.
   - The symbol each instrument uses is set in `js/tv.js`. These are TradingView's
     market prices, not STARTRADER's own quotes, and US shares/ETFs may be delayed.
-- **No spread or bid/ask figures** anywhere.
+- **No spreads anywhere:** no spread or bid/ask figures and no spread wording
+  (`tools/strip-spread.py` cuts it from the workbook copy and fails if any is left).
 - **Speed (Core Web Vitals):**
   - Every page ships pre-rendered: header, content and footer are already in the HTML,
     so the page shows as soon as the HTML and CSS arrive. The scripts then run and
@@ -39,6 +40,7 @@ pl/trading-instruments/{css,js,assets}               -> shared files (all paths 
 
 ## Rebuilding
 ```
+python3 tools/strip-spread.py                      # removes spread wording copied from the workbooks
 python3 tools/build-pl-static.py --out dist-pl     # writes the 56 pages
 node tools/prerender-pl.js dist-pl                 # pre-renders them (needs puppeteer-core + Chrome)
 ```

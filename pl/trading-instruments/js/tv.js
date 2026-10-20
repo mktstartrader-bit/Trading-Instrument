@@ -3,7 +3,7 @@
 
    TradingView has no price API for websites; live prices come from its
    embeddable widgets (iframes), which carry TradingView's attribution.
-   Widgets never show bid/ask, so no spread is published.
+   Widgets never show bid/ask prices.
 
    SYMBOLS maps each CATALOGUE id (js/data.js) to the TradingView symbol whose
    price it shows. Every entry was checked against TradingView symbol search

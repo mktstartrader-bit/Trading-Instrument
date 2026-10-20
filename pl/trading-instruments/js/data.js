@@ -149,35 +149,30 @@
       out.dp = out.price >= 10000 ? 1 : q === "JPY" ? 3 : out.price >= 500 ? 2 : out.price >= 50 ? 3 : 5;
       var exotic = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD"].indexOf(q) === -1;
       out.cur = ""; out.leverage = exotic ? "1:200" : "1:500"; out.hours = "24/5";
-      out.spread = +( rnum(rng, 0.1, 1.4) ).toFixed(1);
     } else if (catId === "metals") {
       var mq = base.slice(-3), mb = base.slice(0, -3);
       out.sym = b6(base) ? mb + "/" + mq : base;
       out.name = (METAL[mb] || mb) + (mq === "USD" ? " Spot" : " / " + (CCY[mq] || mq));
       out.price = (METAL_ANCHOR[base] || (mb === "XAG" ? 30 : 2300)) * (0.98 + rng() * 0.04);
       out.dp = mb === "XAG" ? 3 : 2; out.cur = CURSYM[mq] || "$"; out.leverage = "1:200"; out.hours = "23/5";
-      out.spread = +( rnum(rng, 0.02, 0.6) ).toFixed(2);
     } else if (catId === "commodities") {
       out.sym = base;
       out.name = COMMOD[base] || base;
       out.price = (COMMOD_ANCHOR[base] || rnum(rng, 5, 500)) * (0.97 + rng() * 0.06);
       out.dp = out.price < 10 ? 3 : 2;   // gas & copper quote in fractions of a dollar
       out.cur = "$"; out.leverage = "1:100"; out.hours = "23/5";
-      out.spread = +( rnum(rng, 0.02, 0.8) ).toFixed(2);
     } else if (catId === "indices") {
       out.sym = base;
       out.name = INDEX[base] || base;
       out.price = (INDEX_ANCHOR[base] || rnum(rng, 1000, 25000)) * (0.99 + rng() * 0.02);
       out.dp = base === "VIX" ? 2 : base === "USDX" ? 3 : 1;
       out.cur = ""; out.leverage = "1:200"; out.hours = "24/5";
-      out.spread = +( rnum(rng, 0.4, 6) ).toFixed(1);
     } else if (catId === "shares") {
       var xtks = /\.XTKS$/.test(base);
       out.sym = base;
       out.name = SHARE[base] || (xtks ? "Tokyo Stock " + base.replace(".XTKS", "") : titleize(base));
       out.price = xtks ? rnum(rng, 800, 9000) : (SHARE[base] ? anchoredShare(base, rng) : rnum(rng, 18, 460));
       out.dp = 2; out.cur = xtks ? "¥" : "$"; out.leverage = "1:20"; out.hours = "Exchange";
-      out.spread = +( rnum(rng, 0.02, 0.6) ).toFixed(2);
     } else if (catId === "crypto") {
       var cq = "USD", i;
       for (i = 0; i < CRYPTO_QUOTES.length; i++) { if (base.slice(-CRYPTO_QUOTES[i].length) === CRYPTO_QUOTES[i]) { cq = CRYPTO_QUOTES[i]; break; } }
@@ -193,13 +188,11 @@
       out.price = ap * (0.96 + rng() * 0.08);
       out.dp = dpFromPrice(out.price);
       out.cur = CURSYM[cq] || "$"; out.leverage = "1:20"; out.hours = "24/7";
-      out.spread = +( rnum(rng, 0.001, 8) ).toFixed(3);
     } else if (catId === "etf") {
       out.sym = base;
       out.name = ETF[base] || (base + " ETF");
       out.price = rnum(rng, 12, 220) * (0.98 + rng() * 0.04);
       out.dp = 2; out.cur = "$"; out.leverage = "1:20"; out.hours = "Exchange";
-      out.spread = +( rnum(rng, 0.02, 0.4) ).toFixed(2);
     }
     out.price = +out.price.toFixed(out.dp);
     return out;

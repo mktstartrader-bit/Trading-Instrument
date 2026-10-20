@@ -38,11 +38,11 @@
   function variantDesc(raw) {
     if (/\.m\+$/.test(raw)) return "Prime ECN · metals feed";
     if (/\.c$/.test(raw)) return "Cent account";
-    if (/\+$/.test(raw)) return "Prime ECN · raw spreads";
-    if (/#$/.test(raw)) return "ECN · raw spreads";
+    if (/\+$/.test(raw)) return "Prime ECN";
+    if (/#$/.test(raw)) return "ECN";
     if (/\.bc$/.test(raw)) return "Blockchain / crypto feed";
-    if (/\.z$/.test(raw)) return "Zero-spread account";
-    if (/\.r$/.test(raw)) return "Raw-spread account";
+    if (/\.z$/.test(raw)) return "Zero account";
+    if (/\.r$/.test(raw)) return "Raw account";
     if (/\.i$/.test(raw)) return "Index-priced feed";
     if (/\.m$/.test(raw)) return "Metals-priced feed";
     if (/\.crp$/.test(raw)) return "Corporate feed";
@@ -54,7 +54,7 @@
 
   /* ---------- About section content (row 24) ---------- */
   var about = {
-    forex: "is one of the most actively traded currency pairs in the global foreign-exchange market. Prices are driven by interest-rate differentials, macroeconomic data and central-bank policy. Trade it around the clock, five days a week, with deep liquidity and tight spreads.",
+    forex: "is one of the most actively traded currency pairs in the global foreign-exchange market. Prices are driven by interest-rate differentials, macroeconomic data and central-bank policy. Trade it around the clock, five days a week, with deep liquidity.",
     metals: "is a benchmark precious-metal contract widely used as a store of value and a hedge against inflation and market volatility. Its price reacts to real yields, the US dollar and safe-haven demand.",
     indices: "tracks the performance of a basket of leading listed companies, giving you diversified exposure to an entire economy or sector in a single trade. Index CFDs let you go long or short with competitive margins.",
     energies: "is a globally traded energy benchmark whose price responds to supply-and-demand dynamics, OPEC+ policy, inventories and geopolitics.",
@@ -76,7 +76,6 @@
 
   function whyPoints(it) {
     return [
-      "Competitive spreads with deep institutional liquidity",
       "Leverage up to " + it.leverage + " — margin from " + marginPct(it.leverage),
       "Go long or short to trade both rising and falling markets",
       "Trade " + it.hours + " with sub-30ms execution on MT4, MT5 & STAR Web Trading"
