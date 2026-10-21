@@ -64,7 +64,16 @@
   function set(next) {
     next = normalize(next);
     if (!next || next === lang) return;
-    if (STATIC) { if (STATIC.en) location.href = STATIC.en; return; }
+    if (STATIC) {
+      /* static PL page -> the English version of the same page on this site
+         (site root = two levels above pl/trading-instruments/); relative, so it
+         works on the live site, in the zip and from disk. STATIC.en stays the
+         production URL for hreflang. */
+      var site = STATIC.root + "../../";
+      var en = STATIC.id ? "instrument.html?symbol=" + encodeURIComponent(STATIC.id) + "&lang=en" : "index.html?lang=en";
+      location.href = site + en;
+      return;
+    }
     persist(next);
     var url = new URL(location.href);
     if (next === "en") url.searchParams.delete("lang");
