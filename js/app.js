@@ -1,8 +1,8 @@
 /* ============================================================
    STARTRADER — Instruments explorer
-   Live prices come from TradingView widgets (js/tv.js): a ticker tape in
-   the hero and a Market Data table. The category chips above the table
-   pick which asset class it lists.
+   Prices are plain HTML rendered by js/market.js (placeholder data until
+   the price API is connected): a ticker tape in the hero and a market
+   table. The category chips above the table pick which asset class it lists.
    ============================================================ */
 (function () {
   "use strict";
@@ -27,21 +27,17 @@
   var TOP = window.MOST_TRADED_TOP || [];
   function byId(id) { return window.INSTRUMENTS.filter(function (x) { return x.id === id; })[0]; }
   function inCat(cat) { return window.INSTRUMENTS.filter(function (it) { return it.cat === cat; }); }
-  function tvItem(it) { return { name: window.TV.symbol(it.id), displayName: dispSym(it) }; }
-  function hasTV(it) { return !!(it && window.TV && window.TV.symbol(it.id)); }
+  function ids(list) { return list.filter(Boolean).map(function (it) { return it.id; }); }
 
-  /* ---------- live ticker (hero) ---------- */
+  /* ---------- ticker tape (hero) ---------- */
   function renderTicker() {
-    if (!window.TV) return;
-    window.TV.embed(document.getElementById("ticker"), "ticker-tape", {
-      symbols: TOP.map(byId).filter(hasTV).map(function (it) { return { proName: window.TV.symbol(it.id), title: dispSym(it) }; }),
-      showSymbolLogo: true, isTransparent: true, displayMode: "regular", colorTheme: "dark"
-    });
+    if (!window.MarketView) return;
+    window.MarketView.ticker(document.getElementById("ticker"), ids(TOP.map(byId)));
   }
 
   /* ---------- category filter + live market table ---------- */
   var current = "all";
-  function catItems(id) { return (id === "all" ? TOP.map(byId) : inCat(id)).filter(hasTV); }
+  function catItems(id) { return (id === "all" ? TOP.map(byId) : inCat(id)).filter(Boolean); }
 
   function renderFilters() {
     var el = document.getElementById("filters");
@@ -63,17 +59,10 @@
   }
 
   function renderMarket() {
-    if (!window.TV) return;
-    var items = catItems(current), box = document.getElementById("marketData");
-    var groups = [{ name: catLabel(current), symbols: items.map(tvItem) }];
-    /* the table is as tall as its rows (header + 36px a row), so a short class leaves no gap */
-    if (box) box.style.height = (80 + items.length * 36) + "px";
-    window.TV.embed(document.getElementById("marketData"), "market-quotes", {
-      width: "100%", height: "100%", symbolsGroups: groups,
-      showSymbolLogo: true, isTransparent: true, colorTheme: "light",
-      /* a row click opens our instrument page; it receives ?tvwidgetsymbol= */
-      largeChartUrl: new URL(link("instrument.html").split("?")[0], location.href).href
-    });
+    if (!window.MarketView) return;
+    var box = document.getElementById("marketData");
+    if (box) box.setAttribute("aria-label", catLabel(current));
+    window.MarketView.table(box, ids(catItems(current)));
   }
 
   /* ---------- hero counters ---------- */

@@ -6,7 +6,7 @@ match the production URLs from the approved workbook's Page Index.
 ```
 pl/trading-instruments/index.html                    -> startrader.com/pl/trading-instruments/
 pl/trading-instruments/<category>/<id>/index.html    -> startrader.com/pl/trading-instruments/<category>/<id>/
-pl/trading-instruments/instrument.html               -> forwards TradingView table clicks to the right page (noindex)
+pl/trading-instruments/instrument.html               -> forwards old ?symbol=<id> links to the right page (noindex)
 pl/trading-instruments/pages.csv                     -> id, file, live URL and title of all 56 pages
 pl/trading-instruments/{css,js,assets}               -> shared files (all paths are relative)
 ```
@@ -17,13 +17,18 @@ pl/trading-instruments/{css,js,assets}               -> shared files (all paths 
 - Polish copy comes verbatim from the approved workbooks. The 30 pages that have a
   long-form PL article load it from `js/pl-additional/<id>.js`; the other 25 don't
   have one in the workbook yet.
-- **Live market data from TradingView** (Polish-language widgets):
-  - Home: a live ticker in the hero, plus a live Market Data table. The category
-    chips above it (Najchętniej handlowane, Forex, Surowce, Indeksy, Metale, Akcje,
-    ETF) choose which asset class it lists. Clicking a row opens our instrument page.
-  - Instrument pages: a live TradingView chart and a live quote.
-  - The symbol each instrument uses is set in `js/tv.js`. These are TradingView's
-    market prices, not STARTRADER's own quotes, and US shares/ETFs may be delayed.
+- **Market data is plain HTML (no TradingView, no iframes)** — `js/market.js` renders:
+  - Home: a ticker tape in the hero, plus a market table (Nazwa, Wartość, Zmiana,
+    Zmiana%, Otwarcie, Wysoki, Niski, Poprz.). The category chips above it
+    (Najchętniej handlowane, Forex, Surowce, Indeksy, Metale, Akcje, ETF) choose which
+    asset class it lists. Clicking a row opens our instrument page.
+  - Instrument pages: a quote card and a candlestick / line chart (SVG) with
+    1m · 30m · 1h · 1D · 1W intervals and volume.
+  - **All figures are placeholder data for now.** To connect the price API, replace the
+    two functions in `MarketData` at the top of `js/market.js`:
+    `quotes(ids)` and `candles(id, interval)`; both return Promises, and the expected
+    fields are documented there. `MarketView.update(id, quote)` pushes live updates
+    into every block already on the page (cells carry `data-mk-id` / `data-mk`).
 - **No spreads anywhere:** no spread or bid/ask figures and no spread wording
   (`tools/strip-spread.py` cuts it from the workbook copy and fails if any is left).
 - **Speed (Core Web Vitals):**
@@ -34,7 +39,6 @@ pl/trading-instruments/{css,js,assets}               -> shared files (all paths 
     instead of all 56 pages' copy (117 KB).
   - Both font files are preloaded (Polish letters are in the latin-ext file), so text
     doesn't reflow when the fonts arrive.
-  - The TradingView widgets load after the page, so they don't slow the first paint.
   - Lighthouse, mobile: performance 98–100, LCP 1.5–2.2 s, Speed Index 0.8–1.0 s,
     TBT 0 ms, CLS ≤ 0.064. Desktop: 100 on every page tested.
 
@@ -56,13 +60,3 @@ Serve it with gzip or brotli compression (any CDN does this by default).
   (e.g. `startrader.com/trading-instruments/forex/eurusd/`). Change `--origin` or the
   EN rule in `tools/build-pl-static.py` if the English URLs are different.
 - The navbar and footer links are `#` placeholders, the same as on the current site.
-- On TradingView, `DRAM` is listed as "Roundhill Memory ETF", while our catalogue says
-  "Themes DRAM Semiconductor ETF". Please check that it's the same product.
-
-## Rebuilding
-Source: github.com/mktstartrader-bit/Trading-Instrument.
-```
-python3 tools/build-pl-content.py <workbook>      # only if the PL copy changed
-python3 tools/build-pl-additional.py <workbook>   # only if the long-form copy changed
-python3 tools/build-pl-static.py                  # writes dist-pl/
-```

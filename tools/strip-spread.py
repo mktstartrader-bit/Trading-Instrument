@@ -109,7 +109,6 @@ def english():
         ('      "Competitive spreads with deep institutional liquidity",\n', ""),
     ])
     edit("index.html", [(" — compare live spreads and open any market", " — open any market")])
-    edit("js/tv.js", [("Widgets never show bid/ask, so no spread is published.", "Widgets never show bid/ask prices.")])
     # the demo catalogue used to generate a random spread per instrument for the old price table; nothing reads it
     f = path("js/data.js")
     s = open(f, encoding="utf-8").read()
