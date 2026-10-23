@@ -9,8 +9,8 @@
    page as soon as the HTML and CSS arrive (faster FCP / LCP / Speed Index,
    no header layout shift); the scripts still run and redraw the same markup.
 
-   Live TradingView widgets are blocked while rendering and their containers
-   are saved empty, so each widget is injected once, by the page's own script.
+   The market blocks (js/market.js) are plain HTML and are kept in the snapshot;
+   the page script redraws them on load, with whatever data the feed returns.
    <html class="pre"> switches the entry animations off (css/styles.css),
    so the redraw of identical markup is invisible.
 

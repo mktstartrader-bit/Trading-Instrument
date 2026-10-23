@@ -26,8 +26,8 @@ ROOT = os.path.abspath(os.path.join(HERE, ".."))
 SECTION = "pl/trading-instruments"
 
 # scripts each template needs, in execution order (see the loader in index.html / instrument.html)
-HOME_JS = ["content-pl", "i18n", "data", "tv", "chrome", "app"]
-DETAIL_JS = ["content-pl", "i18n", "data", "@additional", "additional-content", "tv", "chrome", "detail"]
+HOME_JS = ["content-pl", "i18n", "data", "market", "chrome", "app"]
+DETAIL_JS = ["content-pl", "i18n", "data", "@additional", "additional-content", "market", "chrome", "detail"]
 
 
 def read(path):
@@ -178,18 +178,16 @@ def main():
             f.write(build_detail(detail_tpl, C, pid, a.origin, have_additional))
         pages.append((pid, rel + "/index.html"))
 
-    # TradingView Market Data rows open <root>/instrument.html?tvwidgetsymbol=EXCHANGE:SYMBOL;
-    # this page forwards to the matching static instrument page
-    tv = dict(re.findall(r'"?([a-z0-9-]+)"?:\s*"([A-Z_]+:[A-Z0-9_!.]+)"', read("js/tv.js")))
+    # old links to <root>/instrument.html?symbol=<id> forward to the matching static instrument page
     targets = {}
-    for pid, sym in tv.items():
-        if pid in C["meta"]:
-            targets.setdefault(sym, C["meta"][pid]["url"].split("/trading-instruments/", 1)[1])
+    for pid, meta in C["meta"].items():
+        if pid != "home":
+            targets[pid.upper()] = meta["url"].split("/trading-instruments/", 1)[1]
     with open(os.path.join(out, "instrument.html"), "w", encoding="utf-8") as f:
         f.write("""<!DOCTYPE html>
 <html lang="pl"><head><meta charset="UTF-8" /><meta name="robots" content="noindex" /><title>STARTRADER</title>
 <script>
-  var T = %s, s = (new URLSearchParams(location.search).get("tvwidgetsymbol") || "").toUpperCase();
+  var T = %s, s = (new URLSearchParams(location.search).get("symbol") || "").toUpperCase();
   /* opened from disk (file://) a folder URL shows the folder, so name the file */
   var to = T[s] || "./";
   if (location.protocol === "file:") to = to.replace(/^\.\/$/, "") + "index.html";

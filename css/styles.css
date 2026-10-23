@@ -438,15 +438,83 @@ html.pre .reveal, html.pre table.instruments tbody tr { opacity: 1; transform: n
 .ia a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 3px; }
 
 /* ============================================================ RESPONSIVE */
-/* ---------- TradingView widgets (js/tv.js) ----------
-   each container reserves the widget's height so nothing shifts when it loads */
-.tv-ticker { height: 58px; } /* TradingView ticker tape, displayMode "regular": one line, 58px */
-.tv-market { height: 440px; } /* 10 rows; js/app.js sets it per category */
+/* ---------- market data blocks (js/market.js) ----------
+   plain HTML/SVG, no third-party iframes; placeholder data until the price API
+   is connected. Each container reserves its height so nothing shifts. */
 .market-wrap { padding: 8px 10px; overflow: hidden; }
-.tv-chart { height: 440px; margin-top: 18px; border-radius: 14px; overflow: hidden; }
-.tv-quote { height: 70px; }
-.tradingview-widget-copyright { font-size: 11px; color: var(--muted); text-align: right; padding: 4px 6px 0; }
-.tradingview-widget-copyright a { color: var(--blue); }
+.mk-logo { display: inline-grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%;
+  font-size: 8.5px; font-weight: 800; letter-spacing: -.02em; color: #fff; }
+:is(.mk-table, .mk-quote, .mk-ch-legend) .up { color: var(--up); }
+:is(.mk-table, .mk-quote, .mk-ch-legend) .down { color: var(--down); }
+:is(.mk-table, .mk-quote, .mk-ch-legend) .flat { color: var(--muted); }
+
+/* ticker tape (hero) */
+.mk-ticker { height: 58px; overflow: hidden; }
+.mk-tk-track { display: flex; width: max-content; height: 100%; animation: mkTicker 60s linear infinite; }
+.mk-ticker:hover .mk-tk-track, .mk-ticker:focus-within .mk-tk-track { animation-play-state: paused; }
+.mk-tk-list { display: flex; list-style: none; margin: 0; padding: 0; }
+.mk-tk-item a { display: flex; align-items: center; gap: 9px; height: 58px; padding: 0 22px; color: #fff; text-decoration: none;
+  white-space: nowrap; font-size: 14px; border-right: 1px solid rgba(255, 255, 255, .14); }
+.mk-tk-sym { font-weight: 700; }
+.mk-tk-last { font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, .92); }
+.mk-tk-chg { font-variant-numeric: tabular-nums; font-size: 13px; }
+.mk-tk-chg.up { color: #3ddc97; } .mk-tk-chg.down { color: #ff6b70; }
+@keyframes mkTicker { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .mk-tk-track { animation: none; } .mk-ticker { overflow-x: auto; } }
+
+/* market table (explorer) */
+.mk-market { min-height: 440px; }
+.mk-table-scroll { overflow-x: auto; }
+.mk-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.mk-table th, .mk-table td { padding: 0 12px; height: 36px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line-2); }
+.mk-table thead th { height: 44px; font-size: 12px; font-weight: 600; color: var(--faint); }
+.mk-table tbody tr { cursor: pointer; transition: background .15s; }
+.mk-table tbody tr:hover { background: rgba(0, 71, 187, .04); }
+.mk-table tbody tr:last-child th, .mk-table tbody tr:last-child td { border-bottom: 0; }
+.mk-table .mk-name { text-align: left; }
+.mk-table tbody .mk-name { font-weight: 500; }
+.mk-name a { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; }
+.mk-name a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+.mk-nm { display: flex; flex-direction: column; line-height: 1.2; }
+.mk-sym { font-weight: 700; }
+.mk-desc { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+.mk-table tbody th, .mk-table tbody td { height: 48px; }
+
+/* live quote (instrument page) */
+.mk-quote { min-height: 70px; }
+.mk-q { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.mk-q .mk-logo { width: 34px; height: 34px; font-size: 10px; }
+.mk-q-id { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.mk-q-sym { font-weight: 700; color: var(--ink); }
+.mk-q-name { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-q-px { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; line-height: 1.3; }
+.mk-q-last { font-size: 18px; font-weight: 700; color: var(--ink); }
+.mk-q-last small { font-size: 11px; font-weight: 600; color: var(--muted); }
+.mk-q-chg { font-size: 12.5px; font-weight: 600; }
+
+/* price chart (instrument page) */
+.mk-chart { display: flex; flex-direction: column; height: 440px; margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.mk-ch-bar { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-bottom: 1px solid var(--line-2); }
+.mk-ch-bar > div { display: flex; gap: 2px; }
+.mk-ch-bar button { font: inherit; font-size: 12.5px; font-weight: 600; color: var(--muted); background: none; border: 0; border-radius: 7px; padding: 5px 9px; cursor: pointer; }
+.mk-ch-bar button:hover { color: var(--ink); background: var(--line-2); }
+.mk-ch-bar button[aria-pressed="true"] { color: var(--blue); background: rgba(0, 71, 187, .08); }
+.mk-ch-bar button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.mk-ch-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 8px 12px 0; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mk-ch-legend b { color: var(--ink); font-weight: 700; }
+.mk-ch-legend em { font-style: normal; color: var(--ink); }
+.mk-ch-plot { position: relative; flex: 1; min-height: 0; }
+.mk-ch-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.mk-grid { stroke: var(--line-2); stroke-width: 1; }
+.mk-axis { fill: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.mk-candle.up line, .mk-candle.up rect { stroke: var(--up); fill: var(--up); }
+.mk-candle.down line, .mk-candle.down rect { stroke: var(--down); fill: var(--down); }
+.mk-vol.up { fill: var(--up); opacity: .22; } .mk-vol.down { fill: var(--down); opacity: .22; }
+.mk-line { fill: none; stroke: var(--blue); stroke-width: 1.8; stroke-linejoin: round; }
+.mk-last { stroke-dasharray: 2 3; stroke-width: 1; } .mk-last.up { stroke: var(--up); } .mk-last.down { stroke: var(--down); }
+.mk-last-tag.up { fill: var(--up); } .mk-last-tag.down { fill: var(--down); }
+.mk-last-tx { fill: #fff; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.mk-cross { stroke: var(--faint); stroke-dasharray: 3 3; }
 
 /* plain links to every instrument page (below the live table) */
 
@@ -460,7 +528,8 @@ html.pre .reveal, html.pre table.instruments tbody tr { opacity: 1; transform: n
   .d-hero, .d-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 620px) {
-  .tv-chart { height: 360px; }
+  .mk-chart { height: 380px; }
+  .mk-ch-vol { display: none; }
   .wrap { padding: 0 18px; }
   .lang-globe { display: none; }
   .lang-switch { padding: 3px 4px; }
@@ -486,4 +555,10 @@ html.pre .reveal, html.pre table.instruments tbody tr { opacity: 1; transform: n
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   table.instruments tbody tr { opacity: 1; transform: none; }
+}
+/* market table on narrow screens: the name column stays put while the figures scroll */
+.mk-q-last { white-space: nowrap; }
+@media (max-width: 760px) {
+  .mk-table .mk-name { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+  .mk-table .mk-desc { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
 }
