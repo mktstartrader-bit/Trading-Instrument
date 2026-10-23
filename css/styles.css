@@ -562,3 +562,6 @@ html.pre .reveal, html.pre table.instruments tbody tr { opacity: 1; transform: n
   .mk-table .mk-name { position: sticky; left: 0; z-index: 1; background: var(--surface); }
   .mk-table .mk-desc { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
 }
+/* the instrument hero's grid columns may shrink below their content's width,
+   so a long quote name or the chart toolbar never pushes the page sideways */
+.d-hero > * { min-width: 0; }
