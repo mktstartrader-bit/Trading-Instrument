@@ -133,12 +133,12 @@
             '<div class="d-title"><h1>' + sym + '</h1><div class="sub">' + (name === sym ? "" : name + " ") +
               '<span class="pill">' + ((p && p.cat) || catLabel(it.cat)) + '</span></div></div>' +
           '</div>' +
-          '<div class="tv-chart" id="tvChart"></div>' +
+          '<div class="mk-chart" id="mkChart"></div>' +
         '</div>' +
 
         '<div class="d-side">' +
           '<div class="quote-card panel"><h2>' + ((p && p.quoteHead) || "Live Quote") + '</h2>' +
-            '<div class="tv-quote" id="tvQuote"></div>' +
+            '<div class="mk-quote" id="mkQuote"></div>' +
             '<div class="d-cta"><a href="#" class="btn btn-sell">' + ((p && p.sell) || "Sell") + '</a>' +
               '<a href="#" class="btn btn-buy">' + ((p && p.buy) || "Buy") + '</a></div>' +
           '</div>' +
@@ -182,14 +182,9 @@
         '</a>' +
       '</div>';
 
-    var tv = window.TV && window.TV.symbol(it.id);
-    if (tv) {
-      window.TV.embed(document.getElementById("tvQuote"), "single-quote", { symbol: tv, width: "100%", isTransparent: true, colorTheme: "light" });
-      window.TV.embed(document.getElementById("tvChart"), "advanced-chart", {
-        autosize: true, symbol: tv, interval: "D", timezone: "Etc/UTC", theme: "light", style: "1",
-        hide_side_toolbar: true, allow_symbol_change: false, save_image: false, calendar: false,
-        support_host: "https://www.tradingview.com"
-      });
+    if (window.MarketView) {
+      window.MarketView.quote(document.getElementById("mkQuote"), it.id);
+      window.MarketView.chart(document.getElementById("mkChart"), it.id);
     }
 
     document.querySelectorAll(".rel-table tr.row").forEach(function (tr) {
@@ -206,9 +201,7 @@
   }
 
   function init() {
-    /* ?tvwidgetsymbol= arrives from a TradingView Market Data row click */
-    var id = (window.PL_STATIC && window.PL_STATIC.id) || qs("symbol") ||
-      (window.TV && window.TV.idFor(qs("tvwidgetsymbol")));
+    var id = (window.PL_STATIC && window.PL_STATIC.id) || qs("symbol");
     var it = window.INSTRUMENTS.find(function (x) { return x.id === id; });
     if (!it) return notFound(id);
     render(it);
